@@ -1,0 +1,31 @@
+# DJF sensitivity experiment: heating=IOPACneg, 60 days complete
+model_type: multithreaded
+model_subtype: beta
+zw: 63
+kmax: 26
+start_year: 1999
+end_year: 2020
+season: DJF
+heating_name: IOPACneg
+heating_source: custom
+
+preprocess_path_override: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/preprocess__zw_63__kmax_26_v2_DJF_1999-2020
+heating_file_override: heat_DJF_1999-2020_IOPACneg.ggrid.pt
+experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
+preprocess_root: /data/esplab/kpegion/projects/AGCM/MultiThread_Model
+input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
+
+run_length_days: 60
+chunk_size_days: 30
+steps_per_day: 324
+cold_start: false
+toffset: 60
+
+postprocess_vars: [uvel, vvel, geo]
+pressure_levels_hpa: [850, 500, 300, 200]
+compute_slp: false
+
+control_experiment: T63L26_DJF_1999-2020
+spinup_days: 100
+plot_levels_hpa: [200, 850]
+plot_vars: [vvel, uvel, geo]

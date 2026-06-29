@@ -1,0 +1,33 @@
+# Gamma_AC control run (Test) — 54750 days (150 simulated years) complete
+# This is the primary long control run for the Gamma_AC model.
+# Data spans 1950-01-01 through 2099-12-24 in 30-day output chunks.
+model_type: gamma_ac
+zw: 63
+kmax: 26
+start_year: 1979
+end_year: 2023
+season: annual
+heating_name: Test
+heating_source: custom
+
+preprocess_path_override: /data/esplab/kpegion/projects/AGCM/AnnualCycle
+experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
+preprocess_root: /data/esplab/kpegion/projects/AGCM/AnnualCycle
+input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
+
+# Gamma preprocess files used: shapeAC.pt, scaleAC.pt (default, no suffix)
+# Actual output directory: AC_Test (RunModel.Gamma.py prefixes "AC_")
+
+run_length_days: 54750   # 1825 chunks × 30 days = 150 years
+chunk_size_days: 30
+cold_start: false
+toffset: 54750
+
+postprocess_vars: [uvel, vvel, geo]
+pressure_levels_hpa: [850, 500, 300, 200]
+compute_slp: false
+
+control_experiment: null   # this IS the control
+spinup_days: 60
+plot_levels_hpa: [200, 850]
+plot_vars: [vvel, uvel, geo]

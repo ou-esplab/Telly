@@ -1,0 +1,58 @@
+# ============================================================
+# ATM Workflow Config — MultiThread Model, DJF Example
+# ============================================================
+# Run the full pipeline with:
+#   python scripts/01_preprocess.py  --config config/experiments/this_file.yaml
+#   python scripts/02_run_model.py   --config config/experiments/this_file.yaml
+#   python scripts/03_postprocess.py --config config/experiments/this_file.yaml
+#   python scripts/04_plot_results.py --config config/experiments/this_file.yaml
+# ============================================================
+
+# --- Model variant ---
+model_type: multithreaded       # "multithreaded" | "gamma_ac"
+model_subtype: beta             # "beta" | "prescribed_mean"  (multithreaded only)
+
+# --- Resolution ---
+zw: 63    # Spectral truncation wavenumber. Determines grid: 42→64×128, 63→96×192, 124→188×376
+kmax: 26  # Number of vertical sigma levels (11 or 26)
+
+# --- Climatology period ---
+start_year: 1979
+end_year: 2023
+season: DJF   # Season for climatological mean: DJF | JJA | annual (annual required for gamma_ac)
+
+# --- Heating ---
+# heating_name is used in the preprocess directory and experiment directory names.
+# The heating file saved will be:  heat.ggrid_{heating_name}.pt
+heating_name: Cluster1_SE               # Short label for this forcing scenario
+heating_source: cesm2                   # cca | cesm2 | era5 | custom
+# heating_file: /path/to/custom.pt      # If heating_source is "custom", provide full path here
+
+# --- Paths ---
+# Input reanalysis data (NCEP surface temp, pressure, u, v, air temp)
+input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
+# Where preprocess output files (.pt) are stored
+preprocess_root: /data/esplab/kpegion/projects/AGCM/MultiThread_Model
+# Where model experiment output (netCDF, restart files) are stored
+experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
+
+# --- Model run ---
+run_length_days: 360    # Total integration length in days (must be divisible by chunk_size_days)
+chunk_size_days: 30     # Days per output chunk (postprocessing called every chunk)
+# steps_per_day is set automatically from zw: 42→216, 63→324, 124→648
+# Override only if you change the time step:
+# steps_per_day: 324
+cold_start: true        # true = start from rest; false = restart from saved .pt files
+toffset: 0              # Days already run (0 for cold start, >0 for restart)
+
+# --- Post-processing (step 3) ---
+postprocess_vars: [uvel, vvel, geo]          # Variables to interpolate to pressure levels
+pressure_levels_hpa: [850, 500, 300, 200]   # Target pressure levels (hPa)
+compute_slp: false                           # Also compute sea-level pressure
+
+# --- Plotting (step 4) ---
+# Set control_experiment to null to skip difference maps and only plot absolute fields.
+control_experiment: T63L26_DJF_1979-2023_control  # Experiment name of control run
+spinup_days: 60          # Days to skip at the start when computing time means
+plot_levels_hpa: [200, 850]
+plot_vars: [vvel, uvel, geo]
