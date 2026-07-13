@@ -169,14 +169,14 @@ conda activate agcm_environment
 bash scripts/smoke_test.sh
 ```
 
-Runs a cheap (2-3 simulated day) end-to-end check of steps 1-3 for both
+Runs a cheap (2-3 simulated day) end-to-end check of all 4 steps for both
 `fixed_season` and `gamma_ac`, reusing existing preprocess directories and
 writing to `/tmp/atm_smoke_test` (never real experiment data). Checks that
-restart tensors, raw netCDF, and pressure-interpolated netCDF all exist and
-are non-empty. Not a numerical-correctness check — just confirms the
-pipeline didn't crash and produced files. Step 4 (plotting) isn't covered,
-see the `proplot` gap noted above. Step 1 is skipped for `gamma_ac` (see
-comment in the script — a narrower, separate preprocessing gap).
+restart tensors, raw netCDF, pressure-interpolated netCDF, and at least one
+figure PNG all exist and are non-empty. Not a numerical-correctness check —
+just confirms the pipeline didn't crash and produced files. Step 1 is
+skipped for `gamma_ac` (see comment in the script — a narrower, separate
+preprocessing gap).
 
 The first real run of this smoke test immediately found three bugs that had
 apparently never been exercised by the config-driven pipeline before:
@@ -190,6 +190,15 @@ own datapath from OS platform detection rather than the config's
 `experiment_root`. All three are fixed; `build_preprocess_path` is now
 shared via `scripts/_config.py` (not duplicated per-script) specifically to
 stop this class of bug from being able to drift out of sync again.
+
+Step 4 was later ported from ProPlot (unmaintained, incompatible with
+Python ≥3.12) to plain matplotlib + cartopy — same map/colorbar/gridline
+output, no functional change. Verified against both a sequential colormap
+(time-mean plots) and a diverging one (difference plots). Also fixed a
+latent crash in `04_plot_results.py`: a pressure level with no valid data
+anywhere (e.g. entirely below ground for a very short run) made
+`np.arange`'s step size computation blow up instead of skipping that
+plot with a warning.
 
 ---
 

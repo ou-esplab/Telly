@@ -23,9 +23,11 @@ Config keys used here:
 import argparse
 import os
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+from cartopy.util import add_cyclic_point
 import matplotlib.pyplot as plt
 import numpy as np
-import proplot as pplt
 import xarray as xr
 import yaml
 
@@ -58,26 +60,32 @@ def load_timemean(expdir, varfile, fieldname, level_hpa, spinup_days):
 
 
 def make_map_plot(data, title, label, clevs, cmap, outfile):
-    """Single-panel map plot using ProPlot with coastlines."""
-    nlevs = clevs
-    f, ax = pplt.subplots(
-        nrows=1, ncols=1, proj="pcarree",
-        proj_kw={"central_longitude": 180},
-        figsize=(11, 5.5),
+    """Single-panel map plot using matplotlib + cartopy with coastlines."""
+    data_cyclic, lon_cyclic = add_cyclic_point(data.values, coord=data["lon"].values)
+
+    display_proj = ccrs.PlateCarree(central_longitude=180)
+    f = plt.figure(figsize=(11, 5.5))
+    ax = f.add_subplot(1, 1, 1, projection=display_proj)
+
+    ax.coastlines(color="black")
+    ax.add_feature(cfeature.BORDERS, edgecolor="black")
+    gl = ax.gridlines(
+        draw_labels=True, linewidth=0.5, color="gray", linestyle="--",
+        xlocs=np.arange(-180, 181, 30), ylocs=np.arange(-90, 91, 20),
     )
-    ax.format(
-        coast=True, borders=True,
-        coastcolor="black", borderscolor="black",
-        latlines=20, lonlines=30,
-        latlabels=True, lonlabels=True,
-        fontsize=12,
-    )
+    gl.top_labels = False
+    gl.right_labels = False
+    gl.xlabel_style = {"fontsize": 12}
+    gl.ylabel_style = {"fontsize": 12}
+
     cs = ax.contourf(
-        data["lon"].values, data["lat"].values, data.values,
-        norm="div", levels=nlevs, cmap=cmap, extend="both",
+        lon_cyclic, data["lat"].values, data_cyclic,
+        levels=clevs, cmap=cmap, extend="both",
+        transform=ccrs.PlateCarree(),
     )
-    ax.format(title=title, titleweight="bold")
-    f.colorbar(cs, loc="b", length=0.6, label=label)
+    ax.set_title(title, fontweight="bold")
+    cbar = f.colorbar(cs, ax=ax, orientation="horizontal", shrink=0.6, pad=0.08)
+    cbar.set_label(label)
     f.savefig(outfile, dpi=150, bbox_inches="tight")
     plt.close(f)
     print(f"  Saved: {outfile}")
@@ -133,8 +141,12 @@ def main():
                 print(f"  WARNING: could not load {varfile} at {lev} hPa — {exc}")
                 continue
 
-            clevs_abs = np.arange(da_exp.values.min(), da_exp.values.max(),
-                                  (da_exp.values.max() - da_exp.values.min()) / 20)
+            vmin, vmax = np.nanmin(da_exp.values), np.nanmax(da_exp.values)
+            if not np.isfinite(vmin) or not np.isfinite(vmax) or vmax <= vmin:
+                print(f"  WARNING: {varfile} at {lev} hPa has no valid data "
+                      f"(e.g. pressure level below ground everywhere) — skipping mean plot")
+                continue
+            clevs_abs = np.arange(vmin, vmax, (vmax - vmin) / 20)
             make_map_plot(
                 da_exp,
                 title=f"{expname} — {longname} {lev} hPa (mean, skip {spinup} days)",

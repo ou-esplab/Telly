@@ -1,13 +1,12 @@
 #!/bin/bash
 # End-to-end smoke test for the ATM pipeline.
 #
-# Runs steps 1-3 (preprocess/run/postprocess — step 4 plotting is skipped,
-# see the proplot gap noted in README.md and EXPERIMENTS.md) for both model
-# variants against tiny (2-3 day) configs that reuse existing preprocess
-# directories, and checks that the expected output files exist and are
-# non-empty. Not a numerical-correctness check — just confirms the pipeline
-# didn't crash and produced files, which is the class of regression (wrong
-# path, wrong resolution, broken CLI arg passing) most likely to recur.
+# Runs all 4 steps (preprocess/run/postprocess/plot) for both model variants
+# against tiny (2-3 day) configs that reuse existing preprocess directories,
+# and checks that the expected output files exist and are non-empty. Not a
+# numerical-correctness check — just confirms the pipeline didn't crash and
+# produced files, which is the class of regression (wrong path, wrong
+# resolution, broken CLI arg passing) most likely to recur.
 #
 # Usage: bash scripts/smoke_test.sh
 # Exit code 0 = all checks passed, non-zero = at least one failed.
@@ -50,6 +49,9 @@ run_config() {
     echo "-- step 3: postprocess --"
     python3 scripts/03_postprocess.py --config "$config" || { echo "  FAIL postprocess exited non-zero"; FAIL=1; return; }
 
+    echo "-- step 4: plot --"
+    python3 scripts/04_plot_results.py --config "$config" || { echo "  FAIL plot_results exited non-zero"; FAIL=1; return; }
+
     echo "-- checking output files --"
     check_file "restart tensor (tmn1)" "$expdir/tmn1.spectral.pt"
     check_file "restart tensor (zmn1)" "$expdir/zmn1.spectral.pt"
@@ -67,6 +69,14 @@ run_config() {
         check_file "pressure-interpolated output" "$found_pressure_nc"
     else
         echo "  FAIL no *_Pressure_*.nc output found in $expdir (step 3 postprocess)"
+        FAIL=1
+    fi
+    local found_figure
+    found_figure=$(find "$expdir/figures" -maxdepth 1 -name "*.png" 2>/dev/null | head -1)
+    if [ -n "$found_figure" ]; then
+        check_file "figure output" "$found_figure"
+    else
+        echo "  FAIL no .png figure found in $expdir/figures (step 4 plot)"
         FAIL=1
     fi
     echo
