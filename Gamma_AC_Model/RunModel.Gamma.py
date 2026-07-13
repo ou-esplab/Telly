@@ -5,6 +5,7 @@
 
 
 import numpy as np
+import os
 import torch
 import subprocess
 import sys
@@ -39,6 +40,11 @@ if __name__ == '__main__':
     parser.add_argument("--expname",nargs='?',default=None,help="experiment name to be appended to AC_")
     parser.add_argument("--toffset",nargs='?',default=None,help="number of days that have already run; 0 for cold start")
     parser.add_argument("--ichunk",nargs='?',default=None,help="number of 30-day chunks to run")
+    parser.add_argument("--datapath",nargs='?',default=None,help="output directory for this experiment (default: derived from expname under /data/esplab/kpegion/projects/AGCM_Experiments/)")
+    parser.add_argument("--prepath",nargs='?',default=None,help="preprocess directory to read background state/gamma params from (default: AGCM/AnnualCycle)")
+    parser.add_argument("--zw",nargs='?',type=int,default=63,help="zonal wavenumber (also sets mw)")
+    parser.add_argument("--kmax",nargs='?',type=int,default=26,help="number of vertical levels")
+    parser.add_argument("--tl",nargs='?',type=int,default=30,help="chunk size in days")
     args = parser.parse_args()
 
     expstub=args.expname
@@ -69,27 +75,31 @@ if __name__ == '__main__':
 ###
 ###     First Define all spectral grids
 ###
-    zw = 63 # zonal wave number
-    mw = 63 # meridional wave number
-    kmax = 26
-    imax = 192
-    jmax = 96
-    steps_per_day = 216*1.5 ### Changing this number impliws time step changes and should
-    
+    _grid_params = {42: (64, 128, 216), 63: (96, 192, 324), 124: (188, 376, 648)}
+    if args.zw not in _grid_params:
+        raise ValueError(f"Unsupported zw={args.zw}; must be one of {sorted(_grid_params)}")
+    zw = args.zw # zonal wave number
+    mw = args.zw # meridional wave number (standard case: mw == zw)
+    kmax = args.kmax
+    jmax, imax, steps_per_day = _grid_params[zw]
+
 #    ichunk = 120
 #    toffset = 2970
 #                       be implemented carefully
 #
 #
 # provide experiment name and data path for writing out data
-# datapath may need to be edited for your system
 #
     expname = 'AC_'+expstub
     foo = str(subprocess.check_output(['whoami']))
     end = len(foo) - 3
     uname = foo[2:end]
-    datapath = '/data/esplab/kpegion/projects/AGCM_Experiments/'+expname+'/'
-    prepath = '/data/esplab/kpegion/projects/AGCM/AnnualCycle/' #### Assumed to already exist and have preprocessing data
+    datapath = args.datapath if args.datapath else '/data/esplab/kpegion/projects/AGCM_Experiments/'+expname+'/'
+    prepath = args.prepath if args.prepath else '/data/esplab/kpegion/projects/AGCM/AnnualCycle/' #### Assumed to already exist and have preprocessing data
+    if not datapath.endswith('/'):
+        datapath = datapath + '/'
+    if not prepath.endswith('/'):
+        prepath = prepath + '/'
  #
     times = pd.date_range(start = '1950-01-01', end='2100-01-01', freq='D') # The calendar month matters in this version with an
  #                                                                         annual cycle
@@ -99,9 +109,10 @@ if __name__ == '__main__':
  #toffset = 60 # toffset is the number of days that have already run
     datapath_init = datapath #set equal to datapath if restarting in same directory
  #
-    if ( toffset == 0): # Cold Start
-        subprocess.call(['rm','-r', datapath])
-        subprocess.check_output(['mkdir', datapath])
+ # Cold-start directory wipe is handled by the caller (scripts/02_run_model.py main())
+ # for both model types; here we just make sure datapath exists (non-destructive) in
+ # case this script is invoked standalone.
+    os.makedirs(datapath, exist_ok=True)
  #
  # Get Day of Year at start of run
  #
@@ -275,8 +286,8 @@ if __name__ == '__main__':
  #### Preprocessing is complete - now time to run model
  #
  #
- # The Model Runs in 30-day chuncks - need to specify how many 30-day chunks to run
-    tl = 30 ##### tl is the chunk size - typically 30 days, but for testing 3 is reasonable
+ # The Model Runs in tl-day chunks - need to specify how many chunks to run
+    tl = args.tl ##### tl is the chunk size - typically 30 days, but for testing 3 is reasonable
  #
  # Suggested ichunk for time dependent models: 120
  #

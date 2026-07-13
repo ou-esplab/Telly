@@ -260,12 +260,12 @@ def run_multithreaded_beta(cfg, preprocess_path, datapath):
 # Gamma_AC model runner (delegates to existing RunModel.Gamma.py)
 # ---------------------------------------------------------------------------
 
-def run_gamma_ac(cfg, datapath):
+def run_gamma_ac(cfg, preprocess_path, datapath):
     """
-    Calls Gamma_AC_Model/RunModel.Gamma.py as a subprocess.
-
-    Note: RunModel.Gamma.py uses a hardcoded prepath. Ensure that
-    preprocess_root in your config matches the prepath in that script.
+    Calls Gamma_AC_Model/RunModel.Gamma.py as a subprocess, passing all
+    resolution/chunking/path settings explicitly so the config YAML is the
+    single source of truth (RunModel.Gamma.py falls back to its own
+    hardcoded defaults only when run standalone without these flags).
     """
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     script = os.path.join(project_root, "Gamma_AC_Model", "RunModel.Gamma.py")
@@ -280,7 +280,12 @@ def run_gamma_ac(cfg, datapath):
     cmd = [sys.executable, script,
            "--expname", expstub,
            "--toffset", str(toffset),
-           "--ichunk",  str(ichunk)]
+           "--ichunk",  str(ichunk),
+           "--datapath", datapath,
+           "--prepath",  preprocess_path,
+           "--zw",   str(cfg["zw"]),
+           "--kmax", str(cfg["kmax"]),
+           "--tl",   str(cfg["chunk_size_days"])]
     print(f"  Running: {' '.join(cmd)}")
     subprocess.run(cmd, check=True, cwd=os.path.join(project_root, "Gamma_AC_Model"))
 
@@ -339,7 +344,7 @@ def main():
     elif model_type == "gamma_ac":
         sys.path.insert(0, os.path.join(project_root, "Gamma_AC_Model"))
         print("Running Gamma_AC model...")
-        run_gamma_ac(cfg, datapath)
+        run_gamma_ac(cfg, preprocess_path, datapath)
 
     else:
         raise ValueError(f"Unknown model_type: {model_type}")

@@ -941,10 +941,62 @@ def vortdivspec(vsht,u,v,kmax,mw,zw):
     nn = nn.expand(mw,zw)
     lap = -(nn*(nn+1))/(ae*ae)
     uvgrid = torch.stack((u,v), 1)
-    xy = (lap*vsht(uvgrid))*ae 
+    xy = (lap*vsht(uvgrid))*ae
     vort = xy[:,0,:,:]
     div = xy[:,1,:,:]
     return vort,div
+
+
+def press_to_sig(kmax,imax,jmax,press_data,press_levels,ps,slmodel,kmax_model):
+    #
+    # first convert pressure data to sigma using ps
+    #
+    sig_levels = torch.zeros((kmax,jmax,imax),dtype=torch.float64) # sigma levels of input data
+    sig_data = torch.zeros((kmax_model,jmax,imax),dtype=torch.float64) # output on model sigma levels
+    slmap = torch.zeros((kmax_model,jmax,imax),dtype=torch.float64) # model sigma levels but for all j & i
+    for k in range(kmax):
+        sig_levels[k,:,:] = press_levels[k]/ps[:,:] # sig_levels depends on k,j & i
+    for k in range(kmax_model):
+        slmap[k,:,:] = torch.tensor(slmodel[k])
+    #
+    # now at each j & i to interpolate to the appropriate model sigma level
+    # Use log(sig) for interpolation
+    #
+    for isig in range(kmax_model):
+        for ipress in np.arange(kmax-1, -1, -1, dtype=int):
+            foo_up = torch.gt(slmap[isig],sig_levels[ipress-1])
+            foo_dn = torch.lt(slmap[isig],sig_levels[ipress])
+            # test if appropriate press level found
+            foo_up = 1*foo_up
+            foo_dn = 1*foo_dn
+            foo = foo_up + foo_dn
+            found = ( foo == 2 )
+            found = 1*found
+            ### found = 1 level found ; found = 0 level not found
+            denom = torch.log(sig_levels[ipress])\
+                            - torch.log(sig_levels[ipress-1])
+            numer1 = torch.log(sig_levels[ipress])\
+                            - torch.log(slmap[isig])
+            numer2 = torch.log(slmap[isig])\
+                            - torch.log(sig_levels[ipress-1])
+            foo = numer1*press_data[ipress-1]/denom + numer2*press_data[ipress]/denom
+            sig_data[isig] = found*(foo) + (1-found)*sig_data[isig]
+    #
+    # Need to check if model sigma level is below reanalysis lowest sigma level
+    #
+    for isig in range(kmax_model):
+        foo_dn = torch.gt(slmap[isig],sig_levels[kmax-1])
+        foo_dn = 1*foo_dn
+        sig_data[isig] = foo_dn*press_data[kmax-1] + (1-foo_dn)*sig_data[isig]
+    #
+    # Need to check if model sigma level is above reanalysis highest sigma level
+    #
+    for isig in range(kmax_model):
+        foo_up = torch.lt(slmap[isig],sig_levels[0])
+        foo_up = 1*foo_up
+        sig_data[isig] = foo_up*press_data[0] + (1-foo_up)*sig_data[isig]
+    #
+    return sig_data
 
 
 # In[20]:

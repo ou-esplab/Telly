@@ -28,19 +28,27 @@ Atmospheric-Teleconnection-Model-main/   ← code lives here
 │       └── AC_*.yaml           (3 Gamma_AC configs)
 │
 ├── MultiThread_Model/          ← fixed-season model variant
-│   ├── subs1_utils.py          ← core physics (imported by scripts)
-│   ├── preprocess.ipynb        ← original notebook (reference only)
-│   ├── RunModel.beta.ipynb     ← original notebook (reference only)
-│   ├── PressureInterpMetPy.ipynb
-│   ├── plotResults.ipynb
-│   └── old/                   ← superseded versions
+│   ├── subs1_utils.py          ← core physics (imported by scripts); includes press_to_sig
+│   └── reference_notebooks/    ← original/reference-only, not invoked by scripts/
+│       ├── preprocess.ipynb, RunModel.beta.ipynb, PressureInterpMetPy.ipynb,
+│       ├── plotResults.ipynb, heatingprofilefigureS8.ipynb, FigureS7.jpg
+│       ├── RunModel.PrescribedMean.ipynb   ← unwired "strongly prescribed mean" variant
+│       └── tropical_heating_weight_exploration.ipynb
 │
 ├── Gamma_AC_Model/             ← annual-cycle stochastic model variant
 │   ├── subs1_utils.py          ← same physics + latent_heat_release()
-│   ├── RunModel.Gamma.py       ← called by 02_run_model.py
+│   ├── RunModel.Gamma.py       ← called by 02_run_model.py (now takes --datapath/
+│   │                              --prepath/--zw/--kmax/--tl from the config; no
+│   │                              longer relies on hardcoded paths/resolution)
 │   ├── RunModel.Gamma-noheating.py
 │   ├── PressureInterpMetPy.py  ← called by 03_postprocess.py
-│   └── preprocess_gamma.ipynb  ← original notebook (reference only)
+│   ├── PressureInterpMetPy-Year.py
+│   └── reference_notebooks/    ← original/reference-only, not invoked by scripts/
+│       ├── preprocess_gamma.ipynb, preprocess.Gamma_heating.ipynb
+│       ├── RunModel.Gamma.ipynb, RunModel.Gamma-noheating.ipynb
+│       ├── PressureInterpMetPy.ipynb, PressureInterpMetPy_AC_Test_2027-2070.ipynb
+│       ├── model_output_test.ipynb
+│       └── runmodel.sh, postprocess.sh   ← superseded manual invocation examples
 │
 ├── Postprocess/                ← standalone postprocess notebooks (reference)
 │   ├── PressureInterpMetPy.ipynb
@@ -51,6 +59,8 @@ Atmospheric-Teleconnection-Model-main/   ← code lives here
     ├── agcm_environment.yml
     └── agcm_environment_linux.yml  (etc.)
 ```
+
+**Note:** `MultiThread_Model/old/` and the top-level `old/` directory (superseded code and empty leftover dirs) were removed as part of a repo cleanup pass. Reference-only notebooks that were previously mixed in at the top level of each model directory now live under `reference_notebooks/` so it's clear at a glance which files are actually invoked by `scripts/*.py` (listed above them) versus kept for reference. Two correctness fixes landed in the same pass: `press_to_sig` (needed by MultiThread wind preprocessing) was restored into `MultiThread_Model/subs1_utils.py`, and `RunModel.Gamma.py`'s previously-hardcoded output/preprocess paths and resolution now come from the YAML config via `scripts/02_run_model.py`.
 
 ---
 
