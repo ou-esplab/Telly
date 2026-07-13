@@ -62,11 +62,11 @@ def build_experiment_path(cfg):
 
 
 # ---------------------------------------------------------------------------
-# MultiThread (beta) model runner
+# FixedSeason (weakly_prescribed_mean) model runner
 # ---------------------------------------------------------------------------
 
-def run_multithreaded_beta(cfg, preprocess_path, datapath):
-    """Run the weakly-prescribed-mean (beta) model variant."""
+def run_fixed_season(cfg, preprocess_path, datapath):
+    """Run the weakly-prescribed-mean fixed-season model variant."""
     zw   = cfg["zw"]
     kmax = cfg["kmax"]
     mw, jmax, imax, steps_per_day_default = build_grid_params(zw)
@@ -330,16 +330,16 @@ def main():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     model_type   = cfg["model_type"]
 
-    if model_type == "multithreaded":
-        sys.path.insert(0, os.path.join(project_root, "MultiThread_Model"))
-        subtype = cfg.get("model_subtype", "beta")
-        if subtype == "prescribed_mean":
+    if model_type == "fixed_season":
+        sys.path.insert(0, os.path.join(project_root, "FixedSeason_Model"))
+        subtype = cfg.get("model_subtype", "weakly_prescribed_mean")
+        if subtype == "strongly_prescribed_mean":
             raise NotImplementedError(
-                "prescribed_mean subtype not yet wired up in this script. "
+                "strongly_prescribed_mean subtype not yet wired up in this script. "
                 "Use RunModel.PrescribedMean.ipynb directly."
             )
-        print(f"Running MultiThread model (subtype={subtype})...")
-        run_multithreaded_beta(cfg, preprocess_path, datapath)
+        print(f"Running FixedSeason model (subtype={subtype})...")
+        run_fixed_season(cfg, preprocess_path, datapath)
 
     elif model_type == "gamma_ac":
         sys.path.insert(0, os.path.join(project_root, "Gamma_AC_Model"))

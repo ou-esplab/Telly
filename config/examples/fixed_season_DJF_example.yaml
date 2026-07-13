@@ -1,5 +1,5 @@
 # ============================================================
-# ATM Workflow Config — MultiThread Model, DJF Example
+# ATM Workflow Config — FixedSeason Model, DJF Example
 # ============================================================
 # Run the full pipeline with:
 #   python scripts/01_preprocess.py  --config config/experiments/this_file.yaml
@@ -9,8 +9,8 @@
 # ============================================================
 
 # --- Model variant ---
-model_type: multithreaded       # "multithreaded" | "gamma_ac"
-model_subtype: beta             # "beta" | "prescribed_mean"  (multithreaded only)
+model_type: fixed_season        # "fixed_season" | "gamma_ac"
+model_subtype: weakly_prescribed_mean   # "weakly_prescribed_mean" | "strongly_prescribed_mean"  (fixed_season only)
 
 # --- Resolution ---
 zw: 63    # Spectral truncation wavenumber. Determines grid: 42→64×128, 63→96×192, 124→188×376

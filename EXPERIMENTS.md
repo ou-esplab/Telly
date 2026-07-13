@@ -20,14 +20,14 @@ Atmospheric-Teleconnection-Model-main/   ← code lives here
 │
 ├── config/
 │   ├── examples/               ← documented YAML templates
-│   │   ├── multithreaded_DJF_example.yaml
+│   │   ├── fixed_season_DJF_example.yaml
 │   │   └── gamma_ac_example.yaml
 │   └── experiments/            ← one YAML per experiment
 │       ├── T63L26_DJF_*.yaml   (9 DJF configs)
 │       ├── T63L26_JJA_*.yaml   (9 JJA configs)
 │       └── AC_*.yaml           (3 Gamma_AC configs)
 │
-├── MultiThread_Model/          ← fixed-season model variant
+├── FixedSeason_Model/          ← fixed-season model variant
 │   ├── subs1_utils.py          ← core physics (imported by scripts); includes press_to_sig
 │   └── reference_notebooks/    ← original/reference-only, not invoked by scripts/
 │       ├── preprocess.ipynb, RunModel.beta.ipynb, PressureInterpMetPy.ipynb,
@@ -60,7 +60,7 @@ Atmospheric-Teleconnection-Model-main/   ← code lives here
     └── agcm_environment_linux.yml  (etc.)
 ```
 
-**Note:** `MultiThread_Model/old/` and the top-level `old/` directory (superseded code and empty leftover dirs) were removed as part of a repo cleanup pass. Reference-only notebooks that were previously mixed in at the top level of each model directory now live under `reference_notebooks/` so it's clear at a glance which files are actually invoked by `scripts/*.py` (listed above them) versus kept for reference. Two correctness fixes landed in the same pass: `press_to_sig` (needed by MultiThread wind preprocessing) was restored into `MultiThread_Model/subs1_utils.py`, and `RunModel.Gamma.py`'s previously-hardcoded output/preprocess paths and resolution now come from the YAML config via `scripts/02_run_model.py`.
+**Note:** `MultiThread_Model/old/` and the top-level `old/` directory (superseded code and empty leftover dirs) were removed as part of a repo cleanup pass. Reference-only notebooks that were previously mixed in at the top level of each model directory now live under `reference_notebooks/` so it's clear at a glance which files are actually invoked by `scripts/*.py` (listed above them) versus kept for reference. Two correctness fixes landed in the same pass: `press_to_sig` (needed by FixedSeason wind preprocessing) was restored into `FixedSeason_Model/subs1_utils.py`, and `RunModel.Gamma.py`'s previously-hardcoded output/preprocess paths and resolution now come from the YAML config via `scripts/02_run_model.py`. A later pass renamed `MultiThread_Model/` to `FixedSeason_Model/` and the `model_type`/`model_subtype` config values (`multithreaded`→`fixed_season`, `beta`→`weakly_prescribed_mean`, `prescribed_mean`→`strongly_prescribed_mean`) since the old names didn't reflect what the models do — `MultiThread_Model` had no threading/multiprocessing code at all (that lives in `Gamma_AC_Model` instead).
 
 ---
 
@@ -167,7 +167,7 @@ days already completed, then re-run step 2 (and steps 3–4 afterward).
 
 ---
 
-## DJF Experiments (MultiThread_Model, 1999–2020 climatology)
+## DJF Experiments (FixedSeason_Model, 1999–2020 climatology)
 
 Data root: `/data/esplab/kpegion/projects/AGCM_Experiments/`
 Preprocess: `v2_DJF` directory above.
@@ -201,7 +201,7 @@ python scripts/02_run_model.py --config config/experiments/T63L26_DJF_SAComp1_19
 
 ---
 
-## JJA Experiments (MultiThread_Model, 1979–2023 climatology)
+## JJA Experiments (FixedSeason_Model, 1979–2023 climatology)
 
 Data root: `/data/esplab/kpegion/projects/AGCM_Experiments/`
 Preprocess: `JJA` directory above (no year suffix in dir name).

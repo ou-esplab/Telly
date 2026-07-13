@@ -17,7 +17,7 @@ Flags:
                      different heating scenario for the same resolution/season).
 
 Output directory:
-    MultiThread: {preprocess_root}/preprocess__zw_{zw}__kmax_{kmax}_{season}_{y0}-{y1}/
+    FixedSeason: {preprocess_root}/preprocess__zw_{zw}__kmax_{kmax}_{season}_{y0}-{y1}/
     Gamma_AC   : {preprocess_root}/preprocess__zw_{zw}__kmax_{kmax}_annual_{y0}-{y1}/
 
 Note (Gamma_AC only):
@@ -172,11 +172,11 @@ def preprocess_topography(dlatlon, dsht, fullpath):
 
 
 # ---------------------------------------------------------------------------
-# MultiThread preprocessing functions
+# FixedSeason preprocessing functions
 # ---------------------------------------------------------------------------
 
 def mt_preprocess_temperature(cfg, dlatlon, dsht, sl, kmax, imax, jmax, fullpath):
-    print("  Processing temperature climatology (MultiThread)...")
+    print("  Processing temperature climatology (FixedSeason)...")
     m0, m1, m2 = season_month_indices(cfg["season"])
     y0, y1 = str(cfg["start_year"]), str(cfg["end_year"])
 
@@ -203,7 +203,7 @@ def mt_preprocess_temperature(cfg, dlatlon, dsht, sl, kmax, imax, jmax, fullpath
 
 
 def mt_preprocess_surface_pressure(cfg, dlatlon, dsht, imax, fullpath):
-    print("  Processing surface pressure climatology (MultiThread)...")
+    print("  Processing surface pressure climatology (FixedSeason)...")
     m0, m1, m2 = season_month_indices(cfg["season"])
     y0, y1 = str(cfg["start_year"]), str(cfg["end_year"])
 
@@ -225,7 +225,7 @@ def mt_preprocess_surface_pressure(cfg, dlatlon, dsht, imax, fullpath):
 
 
 def mt_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig, kmax, jmax, imax, fullpath):
-    print(f"  Processing heating (MultiThread, source={cfg['heating_source']})...")
+    print(f"  Processing heating (FixedSeason, source={cfg['heating_source']})...")
     m0, m1, m2 = season_month_indices(cfg["season"])
     y0, y1     = str(cfg["start_year"]), str(cfg["end_year"])
     heating_name = cfg["heating_name"]
@@ -297,7 +297,7 @@ def mt_preprocess_winds(cfg, dlatlon, vsht, dsht, disht, divsht,
                         lnps_coeffs, sl, kmax, mw, zw, jmax, imax, fullpath):
     from subs1_utils import vortdivspec, gradq, press_to_sig
 
-    print("  Processing wind/temperature climatology (MultiThread)...")
+    print("  Processing wind/temperature climatology (FixedSeason)...")
     m0, m1, m2 = season_month_indices(cfg["season"])
     y0, y1     = str(cfg["start_year"]), str(cfg["end_year"])
     inpath     = cfg["input_data_path"]
@@ -640,7 +640,7 @@ def main():
 
     cfg = load_config(args.config)
     model_type = cfg["model_type"]
-    if model_type not in ("multithreaded", "gamma_ac"):
+    if model_type not in ("fixed_season", "gamma_ac"):
         raise ValueError(f"Unknown model_type: {model_type}")
 
     mw, jmax, imax = build_grid_params(cfg)
@@ -669,7 +669,7 @@ def main():
 
     # Point sys.path at the right subs1_utils
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    model_dir    = "Gamma_AC_Model" if model_type == "gamma_ac" else "MultiThread_Model"
+    model_dir    = "Gamma_AC_Model" if model_type == "gamma_ac" else "FixedSeason_Model"
     sys.path.insert(0, os.path.join(project_root, model_dir))
 
     from subs1_utils import bscst
@@ -680,8 +680,8 @@ def main():
         setup_spectral_transforms(jmax, imax, mw, zw)
     _, Lat = np.meshgrid(lons, lats)
 
-    # ---- MultiThread ----
-    if model_type == "multithreaded":
+    # ---- FixedSeason ----
+    if model_type == "fixed_season":
         if args.heating_only:
             mt_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig,
                                   kmax, jmax, imax, fullpath)

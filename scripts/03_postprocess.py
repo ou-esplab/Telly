@@ -229,7 +229,7 @@ def main():
         cmd = [sys.executable, script, "--expname", expname, "--dayst", str(dayst)]
         subprocess.run(cmd, check=True, cwd=os.path.join(project_root, "Gamma_AC_Model"))
 
-    else:  # multithreaded
+    else:  # fixed_season
         print(f"Post-processing experiment: {datapath}")
         print(f"  Variables : {pvars}")
         print(f"  Levels    : {plev_hpa} hPa")

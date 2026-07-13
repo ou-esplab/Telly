@@ -1,6 +1,6 @@
 # JJA experiment: heating=Cluster2_ANA_1979-2023, 720 days complete
-model_type: multithreaded
-model_subtype: beta
+model_type: fixed_season
+model_subtype: weakly_prescribed_mean
 zw: 63
 kmax: 26
 start_year: 1979

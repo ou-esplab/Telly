@@ -9,7 +9,7 @@
 # ============================================================
 
 # --- Model variant ---
-model_type: gamma_ac    # "multithreaded" | "gamma_ac"
+model_type: gamma_ac    # "fixed_season" | "gamma_ac"
 # model_subtype is not used for gamma_ac
 
 # --- Resolution ---
