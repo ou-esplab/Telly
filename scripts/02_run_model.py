@@ -24,7 +24,7 @@ import pandas as pd
 import torch
 import yaml
 
-from _config import load_config
+from _config import load_config, build_preprocess_path, build_experiment_path
 
 
 # ---------------------------------------------------------------------------
@@ -38,20 +38,6 @@ def build_grid_params(zw):
         case 63:  return 63, 96, 192, 324
         case 124: return 124, 188, 376, 648
         case _:   raise ValueError(f"Unsupported zw={zw}.")
-
-
-def build_preprocess_path(cfg):
-    if cfg.get("preprocess_path_override"):
-        return cfg["preprocess_path_override"]
-    zw, kmax = cfg["zw"], cfg["kmax"]
-    season = cfg["season"].upper()
-    y0, y1 = cfg["start_year"], cfg["end_year"]
-    return os.path.join(cfg["preprocess_root"],
-                        f"preprocess__zw_{zw}__kmax_{kmax}_{season}_{y0}-{y1}")
-
-
-def build_experiment_path(cfg):
-    return os.path.join(cfg["experiment_root"], cfg["experiment_name"])
 
 
 # ---------------------------------------------------------------------------

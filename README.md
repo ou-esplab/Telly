@@ -7,10 +7,12 @@
 Click the green "<>Code" button, click "Download ZIP", find the project in your downloads, and unzip the folder (extract all). You can move the entire Atmosperic-Teleconnection-Model folder, but moving individual files within that folder may cause problems if all scripts' folder path variables are not changed accordingly.
 
 2) Make sure you have the correct environment  
-2A. The Environments folder includes yml files you can use to create a python environment for the project. For more on creating a conda environment from a yml file, refer to the [Conda User Guide](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file). Use the agcm_environment_windows.yml file for environments on Windows machines or the agcm_environment_mac.yml file for MAC machines. agcm_environment.yml is a generic version which can be used for either.<br/>
+2A. `Environments/agcm_environment.yml` is the primary, actively-maintained environment spec — start there for a new setup (`conda env create -f Environments/agcm_environment.yml`). `Environments/agcm_environment_{linux,mac,windows}.yml` are known-good snapshots frozen via `conda env export` on a specific machine at a specific point in time; use one of those only as a fallback reference if `agcm_environment.yml` doesn't resolve on your machine — their pinned build hashes make them unlikely to solve on a different machine/date. For more on creating a conda environment from a yml file, refer to the [Conda User Guide](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file).<br/>
+<br/>
+**Known gap**: `agcm_environment.yml` covers steps 1-3 of the pipeline (preprocess, run model, postprocess) but not step 4 (plotting). `scripts/04_plot_results.py` imports `proplot`, which is unmaintained and fails to install on Python ≥3.12 (its pinned matplotlib dependency uses `configparser.SafeConfigParser`, removed in 3.12). `ultraplot` is an actively-maintained successor and the likely fix, but `04_plot_results.py`'s proplot-specific calls need porting first — not yet done. Until then, use the reference notebooks under `*/reference_notebooks/` for plotting.<br/>
 <br/>
 2B. Some users have reported difficulties using the yml environment files. Using the following commands in a terminal is an alternative strategy:
-   - conda install -n agcm_environment xarray netcdf4 scipy matplotlib jupyter pytorch;
+   - conda install -n agcm_environment xarray pandas scipy netcdf4 metpy pyyaml matplotlib jupyter pytorch;
    - conda install -n agcm_environment -c conda-forge xesmf;
    - conda activate agcm_environment;
    - pip3 install torch-harmonics==0.6.3

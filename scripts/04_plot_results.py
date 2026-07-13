@@ -29,16 +29,7 @@ import proplot as pplt
 import xarray as xr
 import yaml
 
-from _config import load_config
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def build_experiment_path(cfg):
-    return os.path.join(cfg["experiment_root"], cfg["experiment_name"])
+from _config import load_config, build_experiment_path
 
 
 def build_control_path(cfg):

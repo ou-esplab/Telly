@@ -1,3 +1,8 @@
+# Known-good snapshot from `conda env export` on a specific Mac machine at a
+# specific point in time. Pins exact build hashes, so it will likely fail to
+# solve on a different machine/date. For new setups, start from
+# ../agcm_environment.yml instead; use this only as a fallback reference if
+# that doesn't resolve, or to see exactly what once worked here.
 name: agcm_environment_mac
 channels:
   - conda-forge

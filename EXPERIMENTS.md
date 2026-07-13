@@ -13,19 +13,24 @@ Atmospheric-Teleconnection-Model-main/   ← code lives here
 ├── README.md
 │
 ├── scripts/                    ← 4-step pipeline
+│   ├── _config.py               ← shared load_config/build_preprocess_path/build_experiment_path
 │   ├── 01_preprocess.py
 │   ├── 02_run_model.py
 │   ├── 03_postprocess.py
-│   └── 04_plot_results.py
+│   ├── 04_plot_results.py
+│   └── smoke_test.sh            ← cheap end-to-end pipeline check, see "Smoke Test" below
 │
 ├── config/
+│   ├── defaults.yaml            ← values shared by every experiment config, see below
 │   ├── examples/               ← documented YAML templates
 │   │   ├── fixed_season_DJF_example.yaml
-│   │   └── gamma_ac_example.yaml
+│   │   ├── gamma_ac_example.yaml
+│   │   ├── smoke_test_fixed_season.yaml   ← used by scripts/smoke_test.sh, not a real experiment
+│   │   └── smoke_test_gamma_ac.yaml       ← used by scripts/smoke_test.sh, not a real experiment
 │   └── experiments/            ← one YAML per experiment
 │       ├── T63L26_DJF_*.yaml   (9 DJF configs)
 │       ├── T63L26_JJA_*.yaml   (9 JJA configs)
-│       └── AC_*.yaml           (3 Gamma_AC configs)
+│       └── AC_*.yaml           (2 Gamma_AC configs — AC_warm removed, see Gamma_AC section)
 │
 ├── FixedSeason_Model/          ← fixed-season model variant
 │   ├── subs1_utils.py          ← core physics (imported by scripts); includes press_to_sig
@@ -85,15 +90,15 @@ All data lives outside the repository under two top-level directories on
 │       ├── lnps.spectral.pt
 │       ├── vortsig / divsig / tsig / usig / vsig *.pt
 │       ├── shapeAC.pt, scaleAC.pt           ← gamma params for AC_Test
-│       ├── shapeAC_Warm.pt, scaleAC_Warm.pt ← gamma params for AC_warm
-│       └── shape_noheating.pt, scale_noheating.pt
+│       ├── shapeAC_Warm.pt, scaleAC_Warm.pt ← NOT currently loaded by any script (see note below)
+│       └── shape_noheating.pt, scale_noheating.pt ← used by RunModel.Gamma-noheating.py only
 │
 └── AGCM_Experiments/              ← OUTPUTS from the model
     ├── T63L26_DJF_1999-2020/
     ├── T63L26_DJF_ALL_1999-2020/
     ├── ...                        ← one subdirectory per experiment
     ├── AC_Test/
-    ├── AC_warm/
+    ├── AC_warm_SUSPECT_gamma_params/  ← removed from active use, see note below
     └── AC_noheating/
 ```
 
@@ -154,6 +159,37 @@ python scripts/04_plot_results.py --config config/experiments/<name>.yaml
 To **extend** an existing experiment: edit the config YAML, increase
 `run_length_days`, set `cold_start: false`, and set `toffset` to the number of
 days already completed, then re-run step 2 (and steps 3–4 afterward).
+
+---
+
+## Smoke Test
+
+```bash
+conda activate agcm_environment
+bash scripts/smoke_test.sh
+```
+
+Runs a cheap (2-3 simulated day) end-to-end check of steps 1-3 for both
+`fixed_season` and `gamma_ac`, reusing existing preprocess directories and
+writing to `/tmp/atm_smoke_test` (never real experiment data). Checks that
+restart tensors, raw netCDF, and pressure-interpolated netCDF all exist and
+are non-empty. Not a numerical-correctness check — just confirms the
+pipeline didn't crash and produced files. Step 4 (plotting) isn't covered,
+see the `proplot` gap noted above. Step 1 is skipped for `gamma_ac` (see
+comment in the script — a narrower, separate preprocessing gap).
+
+The first real run of this smoke test immediately found three bugs that had
+apparently never been exercised by the config-driven pipeline before:
+`01_preprocess.py` wasn't honoring `preprocess_path_override` (only
+`02_run_model.py`/`03_postprocess.py` were), both `subs1_utils.py` copies'
+`postprocessing()` built output filenames via raw string concatenation that
+silently required a trailing slash on `datapath` (so netCDF chunk output
+landed one directory up with a mangled name instead of erroring), and
+`Gamma_AC_Model/PressureInterpMetPy.py` hardcoded `zw`/`kmax` and guessed its
+own datapath from OS platform detection rather than the config's
+`experiment_root`. All three are fixed; `build_preprocess_path` is now
+shared via `scripts/_config.py` (not duplicated per-script) specifically to
+stop this class of bug from being able to drift out of sync again.
 
 ---
 
@@ -250,17 +286,29 @@ period.  Output is post-processed annually by `PressureInterpMetPy.py` (one
 | Experiment dir | Preprocess files | Days run | Postprocessed output |
 |----------------|-----------------|----------|----------------------|
 | `AC_Test` | `shapeAC.pt`, `scaleAC.pt` | **54750** (150 yrs) | `geo_Pressure.nc` (all years); `geo_Pressure_days_1-6540.nc`, `_days_1-18240.nc`; ~122 annual geo files |
-| `AC_warm` | `shapeAC_Warm.pt`, `scaleAC_Warm.pt` | **2160** (6 yrs) | `geo_Pressure_days_1-2160.nc`, `uvel_Pressure_days_1-2160.nc`, `vvel_Pressure_days_1-2160.nc` |
 | `AC_noheating` | `shape_noheating.pt`, `scale_noheating.pt` | **0** (not yet run) | — |
 
 **Control experiment**: `AC_Test` (default gamma distribution parameters).
+
+**`AC_warm` removed from active use**: `RunModel.Gamma.py` hardcodes
+`prepath+'shapeAC.pt'`/`'scaleAC.pt'` with no mechanism to select a different
+shape/scale file per experiment — `shapeAC_Warm.pt`/`scaleAC_Warm.pt` exist in
+the preprocess directory but are never loaded by any current script. The
+already-completed `AC_warm` run (2160 days) was therefore very likely
+integrated with the *same* gamma parameters as the `AC_Test` control, not
+distinct "warm" ones, despite its name and prior documentation here claiming
+otherwise. Its output has been moved aside on disk to
+`AC_warm_SUSPECT_gamma_params/` (not deleted, in case it's worth inspecting
+later) and `config/experiments/AC_warm.yaml` removed from the repo. Re-running
+a real "warm" experiment requires first adding a way for `RunModel.Gamma.py`
+to select a non-default shape/scale file per experiment — not yet done.
 
 **How to run Gamma_AC experiments via the existing script directly**:
 ```bash
 cd Gamma_AC_Model
 conda activate agcm_environment
-# expstub is the part after "AC_", e.g., "warm" for AC_warm
-python RunModel.Gamma.py --expname warm --toffset 2160 --ichunk 72
+# expstub is the part after "AC_"
+python RunModel.Gamma.py --expname Test --toffset 0 --ichunk 5
 ```
 Or use `02_run_model.py` with the YAML config (delegates to the script above).
 

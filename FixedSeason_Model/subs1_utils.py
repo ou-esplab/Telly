@@ -4,6 +4,8 @@
 # In[2]:
 
 
+import os
+
 import numpy as np
 import torch
 import torch_harmonics as th
@@ -1090,11 +1092,11 @@ def postprocessing(disht,divsht,zmnt,dmnt,tmnt,qmnt,wmnt,                   phis
     dgeo = xr.Dataset({'geo': (['time','lev','lat','lon'],geo.numpy())},                        coords={'time': times,'lev':sl, 'lat': lats, 'lon': lons})
     dps = xr.Dataset({'lnps': (['time','lat','lon'],lnps.numpy())},                        coords={'time': times,'lat': lats, 'lon': lons})
     datasets = list([du, dv, dtemp, dgeo, dps])
-    filename_paths = list([datapath+'uvel_'+stamp+'.nc'
-                           ,datapath+'vvel_'+stamp+'.nc'
-                           ,datapath+'temp_'+stamp+'.nc'
-                           ,datapath+'geo_'+stamp+'.nc'
-                           ,datapath+'lnps_'+stamp+'.nc'])
+    filename_paths = list([os.path.join(datapath, 'uvel_'+stamp+'.nc')
+                           ,os.path.join(datapath, 'vvel_'+stamp+'.nc')
+                           ,os.path.join(datapath, 'temp_'+stamp+'.nc')
+                           ,os.path.join(datapath, 'geo_'+stamp+'.nc')
+                           ,os.path.join(datapath, 'lnps_'+stamp+'.nc')])
     xr.save_mfdataset(datasets, filename_paths)
     return
 

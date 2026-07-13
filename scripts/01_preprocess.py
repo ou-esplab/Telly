@@ -39,18 +39,9 @@ import xarray as xr
 import xesmf as xe
 import yaml
 
-from _config import load_config
+from _config import load_config, build_preprocess_path
 
 warnings.filterwarnings("ignore")
-
-
-def build_preprocess_path(cfg):
-    zw   = cfg["zw"]
-    kmax = cfg["kmax"]
-    season = cfg["season"].upper()
-    y0, y1 = cfg["start_year"], cfg["end_year"]
-    return os.path.join(cfg["preprocess_root"],
-                        f"preprocess__zw_{zw}__kmax_{kmax}_{season}_{y0}-{y1}")
 
 
 def build_grid_params(cfg):

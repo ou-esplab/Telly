@@ -25,7 +25,7 @@ import numpy as np
 import xarray as xr
 import yaml
 
-from _config import load_config
+from _config import load_config, build_preprocess_path, build_experiment_path
 
 
 # ---------------------------------------------------------------------------
@@ -41,20 +41,6 @@ def build_grid_params(zw, kmax_override=None):
         case _:   raise ValueError(f"Unsupported zw={zw}.")
     kmax = kmax_override if kmax_override else {42: 11, 63: 26, 124: 26}[zw]
     return jmax, imax, kmax
-
-
-def build_experiment_path(cfg):
-    return os.path.join(cfg["experiment_root"], cfg["experiment_name"])
-
-
-def build_preprocess_path(cfg):
-    if cfg.get("preprocess_path_override"):
-        return cfg["preprocess_path_override"]
-    zw, kmax = cfg["zw"], cfg["kmax"]
-    season = cfg["season"].upper()
-    y0, y1 = cfg["start_year"], cfg["end_year"]
-    return os.path.join(cfg["preprocess_root"],
-                        f"preprocess__zw_{zw}__kmax_{kmax}_{season}_{y0}-{y1}")
 
 
 # ---------------------------------------------------------------------------
@@ -219,7 +205,12 @@ def main():
         script = os.path.join(project_root, "Gamma_AC_Model", "PressureInterpMetPy.py")
         expname = os.path.basename(datapath)
         print(f"Delegating to Gamma_AC_Model/PressureInterpMetPy.py (expname={expname})...")
-        cmd = [sys.executable, script, "--expname", expname, "--dayst", str(dayst)]
+        cmd = [sys.executable, script,
+               "--expname", expname,
+               "--dayst", str(dayst),
+               "--datapath", datapath,
+               "--zw", str(zw),
+               "--kmax", str(kmax)]
         subprocess.run(cmd, check=True, cwd=os.path.join(project_root, "Gamma_AC_Model"))
 
     else:  # fixed_season

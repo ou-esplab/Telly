@@ -1,16 +1,43 @@
+# Primary environment spec for the ATM pipeline.
+#
+# Covers steps 1-3 (scripts/01_preprocess.py, 02_run_model.py,
+# 03_postprocess.py), verified against a currently-working install.
+#
+# KNOWN GAP: step 4 (scripts/04_plot_results.py) additionally requires
+# `proplot`, which is NOT installable here — it's unmaintained and its
+# pinned matplotlib dependency fails to build under Python >=3.12
+# (AttributeError: module 'configparser' has no attribute
+# 'SafeConfigParser', removed in 3.12). `ultraplot` (actively maintained
+# on PyPI) is a drop-in-ish successor and the likely fix, but
+# 04_plot_results.py's proplot-specific calls need to be ported first —
+# tracked as a follow-up, not yet done. Until then, run steps 1-3 with
+# this environment and use the reference notebooks under
+# */reference_notebooks/ for plotting.
+#
+# Pins below are for packages where version actually matters (either
+# because a newer major version breaks the code, e.g. numpy 2.x, or
+# because the package's API changes fast, e.g. torch-harmonics). Everything
+# else is left unpinned and will resolve to current compatible versions.
 name: agcm_environment
 channels:
   - pytorch
   - conda-forge
   - defaults
 dependencies:
+  - python=3.12
+  - numpy<2
+  - pandas
+  - scipy
+  - xarray
+  - pyyaml
   - xesmf
-  - matplotlib
   - netcdf4
-  - pydap
+  - metpy
   - dask
+  - matplotlib
   - cartopy
-  - pytorch
+  - pydap
+  - pytorch=2.4.*
   - ipykernel
   - pip:
-      - torch-harmonics
+      - torch-harmonics==0.6.3

@@ -31,7 +31,14 @@ season: annual    # Must be "annual" for gamma_ac (uses daily-varying annual cyc
 # For gamma_ac, heating is generated dynamically from gamma distribution parameters
 # (shape/scale .pt files), so heating_source describes what obs dataset to fit the
 # distribution to. heating_name labels the saved parameter files.
-heating_name: warm           # Label for this forcing scenario (e.g., warm, cold, neutral)
+#
+# KNOWN BUG: RunModel.Gamma.py currently hardcodes prepath+'shapeAC.pt' /
+# 'scaleAC.pt' — heating_name does NOT select a different shape/scale file
+# per experiment, no matter what it's set to here. Alternate parameter
+# files (e.g. shapeAC_Warm.pt/scaleAC_Warm.pt) may exist in the preprocess
+# directory but are never loaded. Don't trust a non-default gamma_ac
+# experiment's results as testing distinct heating until this is fixed.
+heating_name: mywarmrun      # Label for this forcing scenario (e.g., warm, cold, neutral)
 heating_source: cesm2        # cca | cesm2 | era5 | custom
 
 # --- Paths ---
@@ -39,9 +46,9 @@ input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
 preprocess_root: /data/esplab/kpegion/projects/AGCM/AnnualCycle
 experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments   # [default]
 # Exact output directory name under experiment_root — used verbatim, no formula is
-# applied. Gamma_AC experiments conventionally use an "AC_" prefix (e.g. AC_Test,
-# AC_warm) rather than the generic T{zw}L{kmax}_{season}_... pattern used elsewhere.
-experiment_name: AC_warm
+# applied. Gamma_AC experiments conventionally use an "AC_" prefix (e.g. AC_Test)
+# rather than the generic T{zw}L{kmax}_{season}_... pattern used elsewhere.
+experiment_name: AC_mywarmrun
 
 # --- Model run ---
 run_length_days: 2160   # 6 years; longer runs appropriate for annual cycle model

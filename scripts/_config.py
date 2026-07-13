@@ -1,5 +1,5 @@
 """
-Shared config-loading helper for the ATM workflow scripts.
+Shared config-loading/path helpers for the ATM workflow scripts.
 
 load_config() merges config/defaults.yaml (repo-wide defaults shared by
 every experiment) underneath the experiment's own YAML file, which always
@@ -24,3 +24,17 @@ def load_config(path):
         return merged
 
     return cfg
+
+
+def build_preprocess_path(cfg):
+    if cfg.get("preprocess_path_override"):
+        return cfg["preprocess_path_override"]
+    zw, kmax = cfg["zw"], cfg["kmax"]
+    season = cfg["season"].upper()
+    y0, y1 = cfg["start_year"], cfg["end_year"]
+    return os.path.join(cfg["preprocess_root"],
+                        f"preprocess__zw_{zw}__kmax_{kmax}_{season}_{y0}-{y1}")
+
+
+def build_experiment_path(cfg):
+    return os.path.join(cfg["experiment_root"], cfg["experiment_name"])

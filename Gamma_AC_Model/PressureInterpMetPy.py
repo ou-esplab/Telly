@@ -28,6 +28,9 @@ import xarray
 parser = argparse.ArgumentParser()
 parser.add_argument("--expname",nargs='?',default=None,help="experiment name")
 parser.add_argument("--dayst",nargs='?',default=None,help="number of days to postprocess")
+parser.add_argument("--datapath",nargs='?',default=None,help="experiment output directory (default: derived from expname under the platform-specific AGCM_Experiments path)")
+parser.add_argument("--zw",nargs='?',type=int,default=63,help="zonal wavenumber")
+parser.add_argument("--kmax",nargs='?',type=int,default=26,help="number of vertical levels")
 args = parser.parse_args()
 
 expstub=args.expname
@@ -36,8 +39,8 @@ dayst=int(args.dayst)
 # Set postprocess parameters.
 
 # Standard Variables
-zw = 63
-kmax = 26
+zw = args.zw
+kmax = args.kmax
 expname=expstub
 
 DataSetnames=['vvel','uvel','geo']
@@ -48,7 +51,7 @@ imax = None
 jmax = None
 #imax = 192
 #jmax = 96
-custom_path = None
+custom_path = args.datapath
 custom_kmax = None
 
 
@@ -120,6 +123,9 @@ match user_platform:
 
     case _:
         raise Exception("Use case for this system/OS is not implemented. Consider using custom_path in the advanced variables.")
+
+if not datapath.endswith('/'):
+    datapath = datapath + '/'
 
 # Set stamp for file names
 stamp = 'days_1-' + str(dayst)
