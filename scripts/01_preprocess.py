@@ -440,8 +440,11 @@ def gamma_preprocess_surface_pressure(dlatlon, dsht, lats, lons, imax, fullpath)
 def gamma_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig, kmax, jmax, imax, fullpath):
     """
     Prescribed static heating from a composite of ENSO warm years (or another source).
-    This produces one 3-D heating field that acts as a background forcing.
-    The stochastic gamma-distribution heating is handled at runtime in RunModel.Gamma.py.
+    Writes heat.ggrid_{heating_name}.pt as a diagnostic artifact only — it is
+    NOT loaded by RunModel.Gamma.py or RunModel.Gamma-noheating.py at runtime.
+    The model's actual heating is entirely the stochastic gamma-distribution
+    draw computed in latent_heat_release() from shapeAC.pt/scaleAC.pt (or
+    shape_noheating.pt/scale_noheating.pt), independent of this file.
     """
     print(f"  Processing background heating (Gamma_AC, source={cfg['heating_source']})...")
     heating_name = cfg["heating_name"]
@@ -640,8 +643,15 @@ def main():
         and os.path.exists(os.path.join(fullpath, "temp.spectral.pt"))
         and os.path.exists(os.path.join(fullpath, "topog.spectral.pt"))
     )
+    # heat.ggrid_{heating_name}.pt is only required for completeness for
+    # fixed_season, which loads it every timestep. For gamma_ac it's a
+    # write-only diagnostic artifact — RunModel.Gamma.py never loads it
+    # (the model's actual heating is drawn at runtime from shapeAC.pt/
+    # scaleAC.pt via latent_heat_release()) — so its absence shouldn't
+    # block declaring the preprocess directory complete.
+    heating_required_for_completeness = (model_type == "fixed_season")
     if base_exists and not args.force and not args.heating_only:
-        if os.path.exists(heating_file):
+        if (not heating_required_for_completeness) or os.path.exists(heating_file):
             print(f"Preprocess directory already complete: {fullpath}")
             print("Use --force to regenerate all, or --heating-only to redo just the heating.")
             return

@@ -174,9 +174,7 @@ Runs a cheap (2-3 simulated day) end-to-end check of all 4 steps for both
 writing to `/tmp/atm_smoke_test` (never real experiment data). Checks that
 restart tensors, raw netCDF, pressure-interpolated netCDF, and at least one
 figure PNG all exist and are non-empty. Not a numerical-correctness check —
-just confirms the pipeline didn't crash and produced files. Step 1 is
-skipped for `gamma_ac` (see comment in the script — a narrower, separate
-preprocessing gap).
+just confirms the pipeline didn't crash and produced files.
 
 The first real run of this smoke test immediately found three bugs that had
 apparently never been exercised by the config-driven pipeline before:
@@ -199,6 +197,19 @@ latent crash in `04_plot_results.py`: a pressure level with no valid data
 anywhere (e.g. entirely below ground for a very short run) made
 `np.arange`'s step size computation blow up instead of skipping that
 plot with a warning.
+
+Step 1 originally had to be skipped for `gamma_ac` in this test — fixed:
+`01_preprocess.py`'s "already complete" check required
+`heat.ggrid_{heating_name}.pt` to exist for every model type, but that file
+is never loaded by `RunModel.Gamma.py`/`RunModel.Gamma-noheating.py` (the
+model's actual heating is entirely the stochastic draw from
+`shapeAC.pt`/`scaleAC.pt` computed in `latent_heat_release()`). The
+completeness check now only requires that file for `fixed_season`, which
+does load it every timestep. The heating-generation code itself
+(`gamma_preprocess_heating()`) is unchanged — still available via
+`--force`/`--heating-only` for anyone who wants that diagnostic file — its
+docstring was corrected since it previously (incorrectly) claimed the file
+"acts as a background forcing."
 
 ---
 

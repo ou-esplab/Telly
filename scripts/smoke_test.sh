@@ -31,17 +31,12 @@ run_config() {
     local label="$1"
     local config="$2"
     local expdir="$3"
-    local skip_preprocess="${4:-}"
 
     echo "=== $label ==="
     rm -rf "$expdir"
 
-    if [ "$skip_preprocess" = "skip_preprocess" ]; then
-        echo "-- step 1: preprocess (skipped — see comment in this script) --"
-    else
-        echo "-- step 1: preprocess --"
-        python3 scripts/01_preprocess.py --config "$config" || { echo "  FAIL preprocess exited non-zero"; FAIL=1; return; }
-    fi
+    echo "-- step 1: preprocess --"
+    python3 scripts/01_preprocess.py --config "$config" || { echo "  FAIL preprocess exited non-zero"; FAIL=1; return; }
 
     echo "-- step 2: run model --"
     python3 scripts/02_run_model.py --config "$config" || { echo "  FAIL run_model exited non-zero"; FAIL=1; return; }
@@ -86,17 +81,9 @@ run_config "fixed_season model" \
     "config/examples/smoke_test_fixed_season.yaml" \
     "/tmp/atm_smoke_test/smoke_test_fixed_season"
 
-# Step 1 skipped for gamma_ac: 01_preprocess.py's "already complete" check
-# requires a heat.ggrid_{heating_name}.pt file to exist even though it's
-# never actually loaded by RunModel.Gamma.py (only shapeAC.pt/scaleAC.pt
-# are). The AnnualCycle preprocess dir only has the no-suffix heat.ggrid.pt,
-# so a heating_name-based check always looks incomplete. This is a real,
-# narrower gap (worth fixing separately) — not exercised here so the smoke
-# test stays representative of what actually running an experiment needs.
 run_config "gamma_ac model" \
     "config/examples/smoke_test_gamma_ac.yaml" \
-    "/tmp/atm_smoke_test/smoke_test_gamma_ac" \
-    "skip_preprocess"
+    "/tmp/atm_smoke_test/smoke_test_gamma_ac"
 
 echo "============================================================"
 if [ "$FAIL" -eq 0 ]; then
