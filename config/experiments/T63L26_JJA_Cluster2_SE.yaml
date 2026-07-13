@@ -12,6 +12,7 @@ heating_source: custom
 preprocess_path_override: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/preprocess__zw_63__kmax_26
 heating_file_override: heat.ggrid_Cluster2_SE.pt
 experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
+experiment_name: T63L26_JJA_Cluster2_SE   # exact output directory name under experiment_root (no formula applied)
 preprocess_root: /data/esplab/kpegion/projects/AGCM/MultiThread_Model
 input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
 

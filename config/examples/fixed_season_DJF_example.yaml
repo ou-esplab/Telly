@@ -22,7 +22,7 @@ end_year: 2023
 season: DJF   # Season for climatological mean: DJF | JJA | annual (annual required for gamma_ac)
 
 # --- Heating ---
-# heating_name is used in the preprocess directory and experiment directory names.
+# heating_name is used in the preprocess directory name and the default heating filename.
 # The heating file saved will be:  heat.ggrid_{heating_name}.pt
 heating_name: Cluster1_SE               # Short label for this forcing scenario
 heating_source: cesm2                   # cca | cesm2 | era5 | custom
@@ -35,6 +35,9 @@ input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
 preprocess_root: /data/esplab/kpegion/projects/AGCM/MultiThread_Model
 # Where model experiment output (netCDF, restart files) are stored
 experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
+# Exact output directory name under experiment_root — used verbatim, no formula is
+# applied. Set this to whatever you want your experiment's directory to be called.
+experiment_name: T63L26_DJF_mysensitivity_1999-2020
 
 # --- Model run ---
 run_length_days: 360    # Total integration length in days (must be divisible by chunk_size_days)

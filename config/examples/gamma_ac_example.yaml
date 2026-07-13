@@ -24,7 +24,7 @@ season: annual    # Must be "annual" for gamma_ac (uses daily-varying annual cyc
 # --- Heating ---
 # For gamma_ac, heating is generated dynamically from gamma distribution parameters
 # (shape/scale .pt files), so heating_source describes what obs dataset to fit the
-# distribution to. heating_name labels the saved parameter files and experiment dir.
+# distribution to. heating_name labels the saved parameter files.
 heating_name: warm           # Label for this forcing scenario (e.g., warm, cold, neutral)
 heating_source: cesm2        # cca | cesm2 | era5 | custom
 
@@ -32,6 +32,10 @@ heating_source: cesm2        # cca | cesm2 | era5 | custom
 input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
 preprocess_root: /data/esplab/kpegion/projects/AGCM/AnnualCycle
 experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
+# Exact output directory name under experiment_root — used verbatim, no formula is
+# applied. Gamma_AC experiments conventionally use an "AC_" prefix (e.g. AC_Test,
+# AC_warm) rather than the generic T{zw}L{kmax}_{season}_... pattern used elsewhere.
+experiment_name: AC_warm
 
 # --- Model run ---
 run_length_days: 2160   # 6 years; longer runs appropriate for annual cycle model

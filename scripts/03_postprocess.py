@@ -46,12 +46,7 @@ def build_grid_params(zw, kmax_override=None):
 
 
 def build_experiment_path(cfg):
-    zw, kmax = cfg["zw"], cfg["kmax"]
-    season = cfg["season"].upper()
-    y0, y1 = cfg["start_year"], cfg["end_year"]
-    hname  = cfg["heating_name"]
-    return os.path.join(cfg["experiment_root"],
-                        f"T{zw}L{kmax}_{season}_{hname}_{y0}-{y1}")
+    return os.path.join(cfg["experiment_root"], cfg["experiment_name"])
 
 
 def build_preprocess_path(cfg):

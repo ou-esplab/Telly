@@ -224,10 +224,14 @@ Config files: `config/experiments/T63L26_JJA_*.yaml`
 **ANA vs SE heating**: ANA = all-India precipitation composite heating
 (1979–2023 period); SE = South East precipitation composite.
 
-**Note on Cluster1_SE dir name**: The on-disk directory is `T63L26_JJA_Cluster1_SE`
-(no year suffix). The YAML config reflects this; new runs with `02_run_model.py`
-would generate `T63L26_JJA_Cluster1_SE_1979-2023/` — use
-`experiment_name_override` or point to the existing dir if restarting.
+**Note on `*_SE` dir names**: All four `Cluster{1,2,3,4}_SE` on-disk directories
+omit the year suffix (e.g. `T63L26_JJA_Cluster1_SE`, not `..._1979-2023`), unlike
+their `*_ANA` siblings. This used to be a footgun — `02_run_model.py` previously
+derived the output directory from a formula that got this wrong for 13 of the 21
+experiment configs (not just the `*_SE` ones; also the DJF/JJA control runs and
+all Gamma_AC experiments). Every config now sets `experiment_name` explicitly to
+its real on-disk name (see `config/experiments/README.md`), so this is no longer
+something a fresh run can get wrong.
 
 ---
 
