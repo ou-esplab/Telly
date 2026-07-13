@@ -6,6 +6,12 @@
 #   python scripts/02_run_model.py   --config config/experiments/this_file.yaml
 #   python scripts/03_postprocess.py --config config/experiments/this_file.yaml
 #   python scripts/04_plot_results.py --config config/experiments/this_file.yaml
+#
+# config/defaults.yaml supplies zw, kmax, chunk_size_days, compute_slp,
+# experiment_root, heating_source, input_data_path, plot_levels_hpa,
+# postprocess_vars, pressure_levels_hpa — every real experiment config in
+# config/experiments/ omits those and only sets what's below. They're kept
+# here (marked "[default]") so this template stays a complete reference.
 # ============================================================
 
 # --- Model variant ---
@@ -13,8 +19,8 @@ model_type: fixed_season        # "fixed_season" | "gamma_ac"
 model_subtype: weakly_prescribed_mean   # "weakly_prescribed_mean" | "strongly_prescribed_mean"  (fixed_season only)
 
 # --- Resolution ---
-zw: 63    # Spectral truncation wavenumber. Determines grid: 42→64×128, 63→96×192, 124→188×376
-kmax: 26  # Number of vertical sigma levels (11 or 26)
+zw: 63    # [default] Spectral truncation wavenumber. Determines grid: 42→64×128, 63→96×192, 124→188×376
+kmax: 26  # [default] Number of vertical sigma levels (11 or 26)
 
 # --- Climatology period ---
 start_year: 1979
@@ -30,18 +36,18 @@ heating_source: cesm2                   # cca | cesm2 | era5 | custom
 
 # --- Paths ---
 # Input reanalysis data (NCEP surface temp, pressure, u, v, air temp)
-input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
+input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data   # [default]
 # Where preprocess output files (.pt) are stored
 preprocess_root: /data/esplab/kpegion/projects/AGCM/MultiThread_Model
 # Where model experiment output (netCDF, restart files) are stored
-experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
+experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments   # [default]
 # Exact output directory name under experiment_root — used verbatim, no formula is
 # applied. Set this to whatever you want your experiment's directory to be called.
 experiment_name: T63L26_DJF_mysensitivity_1999-2020
 
 # --- Model run ---
 run_length_days: 360    # Total integration length in days (must be divisible by chunk_size_days)
-chunk_size_days: 30     # Days per output chunk (postprocessing called every chunk)
+chunk_size_days: 30     # [default] Days per output chunk (postprocessing called every chunk)
 # steps_per_day is set automatically from zw: 42→216, 63→324, 124→648
 # Override only if you change the time step:
 # steps_per_day: 324
@@ -49,13 +55,13 @@ cold_start: true        # true = start from rest; false = restart from saved .pt
 toffset: 0              # Days already run (0 for cold start, >0 for restart)
 
 # --- Post-processing (step 3) ---
-postprocess_vars: [uvel, vvel, geo]          # Variables to interpolate to pressure levels
-pressure_levels_hpa: [850, 500, 300, 200]   # Target pressure levels (hPa)
-compute_slp: false                           # Also compute sea-level pressure
+postprocess_vars: [uvel, vvel, geo]          # [default] Variables to interpolate to pressure levels
+pressure_levels_hpa: [850, 500, 300, 200]   # [default] Target pressure levels (hPa)
+compute_slp: false                           # [default] Also compute sea-level pressure
 
 # --- Plotting (step 4) ---
 # Set control_experiment to null to skip difference maps and only plot absolute fields.
 control_experiment: T63L26_DJF_1979-2023_control  # Experiment name of control run
 spinup_days: 60          # Days to skip at the start when computing time means
-plot_levels_hpa: [200, 850]
+plot_levels_hpa: [200, 850]   # [default]
 plot_vars: [vvel, uvel, geo]

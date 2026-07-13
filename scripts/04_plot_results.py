@@ -29,14 +29,12 @@ import proplot as pplt
 import xarray as xr
 import yaml
 
+from _config import load_config
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def load_config(path):
-    with open(path) as f:
-        return yaml.safe_load(f)
 
 
 def build_experiment_path(cfg):

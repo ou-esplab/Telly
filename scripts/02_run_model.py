@@ -24,14 +24,12 @@ import pandas as pd
 import torch
 import yaml
 
+from _config import load_config
+
 
 # ---------------------------------------------------------------------------
 # Helpers shared with other scripts
 # ---------------------------------------------------------------------------
-
-def load_config(path):
-    with open(path) as f:
-        return yaml.safe_load(f)
 
 
 def build_grid_params(zw):

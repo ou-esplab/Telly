@@ -39,16 +39,9 @@ import xarray as xr
 import xesmf as xe
 import yaml
 
+from _config import load_config
+
 warnings.filterwarnings("ignore")
-
-
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
-
-def load_config(path):
-    with open(path) as f:
-        return yaml.safe_load(f)
 
 
 def build_preprocess_path(cfg):

@@ -1,29 +1,18 @@
 # Gamma_AC warm experiment — 2160 days (6 years) complete
 model_type: gamma_ac
-zw: 63
-kmax: 26
 start_year: 1979
 end_year: 2023
 season: annual
 heating_name: warm
-heating_source: custom
 
 preprocess_path_override: /data/esplab/kpegion/projects/AGCM/AnnualCycle
-experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
 experiment_name: AC_warm   # exact output directory name under experiment_root (no formula applied)
 preprocess_root: /data/esplab/kpegion/projects/AGCM/AnnualCycle
-input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
 
 run_length_days: 2160
-chunk_size_days: 30
 cold_start: false
 toffset: 2160
 
-postprocess_vars: [uvel, vvel, geo]
-pressure_levels_hpa: [850, 500, 300, 200]
-compute_slp: false
-
 control_experiment: null
 spinup_days: 60
-plot_levels_hpa: [200, 850]
 plot_vars: [vvel, uvel, geo]

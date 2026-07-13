@@ -1,32 +1,21 @@
 # JJA experiment: heating=Cluster3_ANA_1979-2023, 720 days complete
 model_type: fixed_season
 model_subtype: weakly_prescribed_mean
-zw: 63
-kmax: 26
 start_year: 1979
 end_year: 2023
 season: JJA
 heating_name: Cluster3_ANA_1979-2023
-heating_source: custom
 
 preprocess_path_override: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/preprocess__zw_63__kmax_26
 heating_file_override: heat.ggrid_Cluster3_ANA_1979-2023.pt
-experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
 experiment_name: T63L26_JJA_Cluster3_ANA_1979-2023   # exact output directory name under experiment_root (no formula applied)
 preprocess_root: /data/esplab/kpegion/projects/AGCM/MultiThread_Model
-input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
 
 run_length_days: 720
-chunk_size_days: 30
 steps_per_day: 324
 cold_start: false
 toffset: 720
 
-postprocess_vars: [uvel, vvel, geo]
-pressure_levels_hpa: [850, 500, 300, 200]
-compute_slp: false
-
 control_experiment: T63L26_JJA_1979-2023
 spinup_days: 60
-plot_levels_hpa: [200, 850]
 plot_vars: [vvel, uvel, geo]

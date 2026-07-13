@@ -1,0 +1,35 @@
+# ============================================================
+# Shared defaults for all experiment configs
+# ============================================================
+# Every key here is identical across all 21 current experiment configs.
+# Values here are merged in first; anything an experiment config sets
+# explicitly always overrides these (see scripts/_config.py:load_config).
+#
+# Deliberately NOT included here, even though they're constant across the
+# 18 fixed_season configs: model_subtype, steps_per_day. Those don't apply
+# to gamma_ac configs at all (gamma_ac ignores model_subtype and derives
+# steps_per_day internally from zw), so keeping them explicit per
+# fixed_season config avoids implying they mean something for gamma_ac too.
+# ============================================================
+
+# --- Resolution ---
+zw: 63
+kmax: 26
+
+# --- Paths ---
+experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
+input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
+
+# --- Heating ---
+heating_source: custom
+
+# --- Model run ---
+chunk_size_days: 30
+
+# --- Post-processing (step 3) ---
+postprocess_vars: [uvel, vvel, geo]
+pressure_levels_hpa: [850, 500, 300, 200]
+compute_slp: false
+
+# --- Plotting (step 4) ---
+plot_levels_hpa: [200, 850]
