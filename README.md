@@ -15,6 +15,11 @@ Click the green "<>Code" button, click "Download ZIP", find the project in your 
    - conda activate agcm_environment;
    - pip3 install torch-harmonics==0.6.3
 
+**Students**: instead of steps 3-7 below, consider using `student_tools/` — two Jupyter notebooks
+(`Generate_Heating_and_ShapeScale.ipynb`, `Configure_and_Run_Experiment.ipynb`) with a form-based UI
+that runs the same 4-step pipeline without hand-editing notebooks or the command line. See
+`EXPERIMENTS.md`'s "Student Tools" section.
+
 3) Edit Preprocess.ipynb variables  
 Edit Preprocess.ipynb to choose your resolution, number of months to run, and make sure your folder paths are correctly set - that is, where to write the output. Documentation in the notebooks should help in doing this.
 

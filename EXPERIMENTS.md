@@ -14,11 +14,20 @@ Atmospheric-Teleconnection-Model-main/   ← code lives here
 │
 ├── scripts/                    ← 4-step pipeline
 │   ├── _config.py               ← shared load_config/build_preprocess_path/build_experiment_path
+│   ├── _preprocess_common.py    ← shared grid/upsample helpers (extracted from 01_preprocess.py
+│   │                               so generate_shape_scale.py can reuse them)
 │   ├── 01_preprocess.py
 │   ├── 02_run_model.py
 │   ├── 03_postprocess.py
 │   ├── 04_plot_results.py
+│   ├── generate_heating.py      ← friendly wrapper over 01_preprocess.py --heating-only
+│   ├── generate_shape_scale.py  ← gamma-distribution shape/scale fitting, incl. composite-years
+│   │                               (e.g. El Nino) fits — ported from a notebook, see below
 │   └── smoke_test.sh            ← cheap end-to-end pipeline check, see "Smoke Test" below
+│
+├── student_tools/               ← Jupyter/ipywidgets UI, see "Student Tools" below
+│   ├── Generate_Heating_and_ShapeScale.ipynb
+│   └── Configure_and_Run_Experiment.ipynb
 │
 ├── config/
 │   ├── defaults.yaml            ← values shared by every experiment config, see below
@@ -162,6 +171,52 @@ python scripts/04_plot_results.py --config config/experiments/<name>.yaml
 To **extend** an existing experiment: edit the config YAML, increase
 `run_length_days`, set `cold_start: false`, and set `toffset` to the number of
 days already completed, then re-run step 2 (and steps 3–4 afterward).
+
+---
+
+## Student Tools
+
+`student_tools/` has two Jupyter notebooks (need `jupyterlab`/`ipywidgets`,
+both in `Environments/agcm_environment.yml`) that wrap the command-line
+workflow above in a form UI — no hand-editing YAML or the command line
+required. Open them in JupyterLab from anywhere inside the repo (they
+locate the project root automatically).
+
+**`Generate_Heating_and_ShapeScale.ipynb`** — two panels:
+- *Heating file* (`fixed_season`, or an optional diagnostic-only file for
+  `gamma_ac` — not used by the running `gamma_ac` model): wraps
+  `scripts/generate_heating.py`, itself a thin wrapper over
+  `01_preprocess.py --heating-only` (no new science, just a friendlier
+  interface).
+- *Shape/scale files* (`gamma_ac` — what the model actually uses for its
+  daily stochastic heating draw): wraps `scripts/generate_shape_scale.py`.
+  Fit a "Control" climatology, a "Composite" fit from event-year windows you
+  specify (e.g. real El Nino years, the same technique behind `AC_warm`'s
+  `shapeAC_Warm.pt`/`scaleAC_Warm.pt`), or generate an explicit all-zero
+  "No heating" pair. This fitting logic was ported this session from
+  `Gamma_AC_Model/reference_notebooks/preprocess.Gamma_heating.ipynb`
+  (previously manually-run-cells-only, no reusable function existed) —
+  verified to reproduce the real `shapeAC_Warm.pt`/`scaleAC_Warm.pt`
+  **exactly** (max abs difference 0.0) when given the same El Nino windows
+  and date range. Composite windows must each span a full annual cycle
+  (365/366 days, e.g. Jul-1-to-Jun-30) so the day-of-year composite has
+  complete coverage — the tool validates this and raises a clear error
+  rather than silently producing a partial-year result.
+
+**`Configure_and_Run_Experiment.ipynb`** — curated widgets for the config
+fields that actually vary per experiment (model type, season/heating,
+years, your own `experiment_root`/`experiment_name`, run length,
+cold_start/toffset, shape/scale overrides for `gamma_ac`, control
+experiment, plot vars), with the rarely-touched advanced fields (zw, kmax,
+chunk size, etc.) collapsed and defaulted from `config/defaults.yaml`. A
+"Build Config" button writes the YAML; "Run Pipeline" then runs all 4 steps
+in sequence, stopping at the first failure. If `cold_start` is checked and
+the target experiment directory already exists, you're shown an explicit
+confirmation button before anything is deleted.
+
+You point `experiment_root` at your own directory — you won't have write
+access to the instructor's production experiment data, so there's no
+separate sandboxing logic needed beyond that.
 
 ---
 

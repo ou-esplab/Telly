@@ -6,6 +6,9 @@
 # install on Python >=3.12; see git history if you need the old
 # proplot-based plotting code).
 #
+# Also covers student_tools/ (jupyterlab + ipywidgets — the two notebooks
+# there need both to render).
+#
 # Pins below are for packages where version actually matters (either
 # because a newer major version breaks the code, e.g. numpy 2.x, or
 # because the package's API changes fast, e.g. torch-harmonics). Everything
@@ -31,5 +34,7 @@ dependencies:
   - pydap
   - pytorch=2.4.*
   - ipykernel
+  - jupyterlab
+  - ipywidgets
   - pip:
       - torch-harmonics==0.6.3
