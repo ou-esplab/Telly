@@ -255,6 +255,8 @@ def run_gamma_ac(cfg, preprocess_path, datapath):
 
     ichunk  = cfg["run_length_days"] // cfg["chunk_size_days"]
     toffset = cfg.get("toffset", 0)
+    shape_file = cfg.get("shape_file_override", "shapeAC.pt")
+    scale_file = cfg.get("scale_file_override", "scaleAC.pt")
 
     cmd = [sys.executable, script,
            "--expname", expstub,
@@ -264,7 +266,9 @@ def run_gamma_ac(cfg, preprocess_path, datapath):
            "--prepath",  preprocess_path,
            "--zw",   str(cfg["zw"]),
            "--kmax", str(cfg["kmax"]),
-           "--tl",   str(cfg["chunk_size_days"])]
+           "--tl",   str(cfg["chunk_size_days"]),
+           "--shapefile", shape_file,
+           "--scalefile", scale_file]
     print(f"  Running: {' '.join(cmd)}")
     subprocess.run(cmd, check=True, cwd=os.path.join(project_root, "Gamma_AC_Model"))
 

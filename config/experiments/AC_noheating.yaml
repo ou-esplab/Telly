@@ -1,4 +1,13 @@
 # Gamma_AC no-heating experiment — not yet run (directory exists but empty)
+#
+# IMPORTANT: before this fix, running this config through
+# scripts/02_run_model.py would have silently used the control gamma
+# parameters (shapeAC.pt/scaleAC.pt) instead of the no-heating ones —
+# run_gamma_ac() always calls RunModel.Gamma.py, never the separate
+# RunModel.Gamma-noheating.py script that has the right files hardcoded.
+# shape_file_override/scale_file_override below fix that: RunModel.Gamma.py
+# now takes --shapefile/--scalefile, so this config alone is sufficient —
+# RunModel.Gamma-noheating.py is no longer needed for a pipeline-driven run.
 model_type: gamma_ac
 start_year: 1979
 end_year: 2023
@@ -8,8 +17,8 @@ heating_name: noheating
 preprocess_path_override: /data/esplab/kpegion/projects/AGCM/AnnualCycle
 experiment_name: AC_noheating   # exact output directory name under experiment_root (no formula applied)
 preprocess_root: /data/esplab/kpegion/projects/AGCM/AnnualCycle
-
-# Gamma preprocess files used: shape_noheating.pt, scale_noheating.pt
+shape_file_override: shape_noheating.pt
+scale_file_override: scale_noheating.pt
 
 run_length_days: 2160
 cold_start: true

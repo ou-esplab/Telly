@@ -29,19 +29,20 @@ season: annual    # Must be "annual" for gamma_ac (uses daily-varying annual cyc
 
 # --- Heating ---
 # For gamma_ac, heating is generated dynamically from gamma distribution parameters
-# (shape/scale .pt files), so heating_source describes what obs dataset to fit the
-# distribution to. heating_name labels the saved parameter files.
-#
-# GAP: RunModel.Gamma.py (the current .py script) hardcodes
-# prepath+'shapeAC.pt'/'scaleAC.pt' with no per-experiment selection — this
-# has been done before (AC_warm uses shapeAC_Warm.pt/scaleAC_Warm.pt, fit to
-# composited El Nino precipitation), but only via manually editing
-# Gamma_AC_Model/reference_notebooks/RunModel.Gamma.ipynb, not through this
-# config-driven pipeline. heating_name here does NOT select a shape/scale
-# file yet — RunModel.Gamma.py needs a --shape-file/--scale-file option
-# added first (see EXPERIMENTS.md's Gamma_AC Experiments section).
+# (shape/scale .pt files read from the preprocess directory at runtime), so
+# heating_source describes what obs dataset was used to fit the distribution.
+# heating_name is just a label — it does NOT select the shape/scale files;
+# set shape_file_override/scale_file_override explicitly below for that.
 heating_name: warm            # Label for this forcing scenario (e.g., warm, cold, neutral)
 heating_source: cesm2        # cca | cesm2 | era5 | custom
+
+# Exact shape/scale filenames to read from the preprocess directory, passed
+# to RunModel.Gamma.py as --shapefile/--scalefile. Default (if omitted):
+# shapeAC.pt/scaleAC.pt (the control climatology). AC_warm uses
+# shapeAC_Warm.pt/scaleAC_Warm.pt (fit to composited El Nino precipitation);
+# AC_noheating uses shape_noheating.pt/scale_noheating.pt.
+shape_file_override: shapeAC_Warm.pt
+scale_file_override: scaleAC_Warm.pt
 
 # --- Paths ---
 input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data   # [default]

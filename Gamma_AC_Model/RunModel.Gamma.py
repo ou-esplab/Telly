@@ -45,6 +45,8 @@ if __name__ == '__main__':
     parser.add_argument("--zw",nargs='?',type=int,default=63,help="zonal wavenumber (also sets mw)")
     parser.add_argument("--kmax",nargs='?',type=int,default=26,help="number of vertical levels")
     parser.add_argument("--tl",nargs='?',type=int,default=30,help="chunk size in days")
+    parser.add_argument("--shapefile",nargs='?',default="shapeAC.pt",help="gamma-distribution shape parameter filename, read from prepath (default: shapeAC.pt, the control)")
+    parser.add_argument("--scalefile",nargs='?',default="scaleAC.pt",help="gamma-distribution scale parameter filename, read from prepath (default: scaleAC.pt, the control)")
     args = parser.parse_args()
 
     expstub=args.expname
@@ -254,8 +256,8 @@ if __name__ == '__main__':
  #
  # Read shape and scale for gamma rainfall distribution
  #
-    shape = torch.load(prepath+'shapeAC.pt')
-    scale = torch.load(prepath+'scaleAC.pt')
+    shape = torch.load(prepath+args.shapefile)
+    scale = torch.load(prepath+args.scalefile)
  #
  
  

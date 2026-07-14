@@ -337,15 +337,25 @@ edited notebook; the current `.py` script just never had that
 per-experiment selection ported into it. `AC_warm`'s output and config
 have been restored.
 
-**Remaining real gap**: extending or restarting `AC_warm` through the
-current `scripts/02_run_model.py` → `RunModel.Gamma.py` pipeline would
-silently use the wrong (control) shape/scale files, since that pipeline
-still has no per-experiment selection mechanism — only the original
-manually-edited notebook did. `RunModel.Gamma.py` needs a
-`--shape-file`/`--scale-file`-style option (matching the
-`--datapath`/`--prepath`/`--zw`/`--kmax`/`--tl` pattern already added)
-before `AC_warm` can be safely extended or rerun via the automated
-pipeline.
+**Fixed**: `RunModel.Gamma.py` now takes `--shapefile`/`--scalefile`
+(defaulting to `shapeAC.pt`/`scaleAC.pt`, same as before if omitted), and
+`scripts/02_run_model.py` passes them from each config's
+`shape_file_override`/`scale_file_override` — all three `AC_*.yaml` configs
+now set these explicitly, so the config is the single source of truth for
+which gamma parameters a run actually uses.
+
+This also fixed a second, related gap found while making this change:
+`run_gamma_ac()` in `scripts/02_run_model.py` always calls
+`RunModel.Gamma.py`, never the separate `RunModel.Gamma-noheating.py`
+script — so running `AC_noheating.yaml` through the automated pipeline
+would previously have silently used the control parameters
+(`shapeAC.pt`/`scaleAC.pt`) instead of `shape_noheating.pt`/
+`scale_noheating.pt`, making it identical to `AC_Test` rather than an
+actual no-heating run. `AC_noheating.yaml` now sets
+`shape_file_override`/`scale_file_override` explicitly, so
+`RunModel.Gamma-noheating.py` is no longer needed for a pipeline-driven
+run of any of the three current experiments (it's still there, and still
+directly runnable standalone, but superseded for this purpose).
 
 **How to run Gamma_AC experiments via the existing script directly**:
 ```bash
@@ -353,8 +363,12 @@ cd Gamma_AC_Model
 conda activate agcm_environment
 # expstub is the part after "AC_"
 python RunModel.Gamma.py --expname Test --toffset 0 --ichunk 5
+# For a non-default experiment like AC_warm, pass the matching gamma files explicitly:
+python RunModel.Gamma.py --expname warm --toffset 2160 --ichunk 1 \
+    --shapefile shapeAC_Warm.pt --scalefile scaleAC_Warm.pt
 ```
-Or use `02_run_model.py` with the YAML config (delegates to the script above).
+Or use `02_run_model.py` with the YAML config (delegates to the script above,
+reading `shape_file_override`/`scale_file_override` from the config).
 
 **To run AC_noheating**:
 ```bash

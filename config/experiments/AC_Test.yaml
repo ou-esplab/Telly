@@ -11,7 +11,11 @@ preprocess_path_override: /data/esplab/kpegion/projects/AGCM/AnnualCycle
 experiment_name: AC_Test   # exact output directory name under experiment_root (no formula applied)
 preprocess_root: /data/esplab/kpegion/projects/AGCM/AnnualCycle
 
-# Gamma preprocess files used: shapeAC.pt, scaleAC.pt (default, no suffix)
+# Gamma-distribution parameter files (control climatology, no suffix). These
+# are also RunModel.Gamma.py's built-in defaults, but stated explicitly here
+# so this file is unambiguous on its own.
+shape_file_override: shapeAC.pt
+scale_file_override: scaleAC.pt
 
 run_length_days: 54750   # 1825 chunks × 30 days = 150 years
 cold_start: false
