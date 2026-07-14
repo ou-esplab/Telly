@@ -304,12 +304,14 @@ def _press_to_sig_batch(kmax, imax, jmax, press_data, press_levels, ps, slmodel,
     return sig_data
 
 
-def gamma_preprocess_temperature(dlatlon, dsht, lats, lons, sl, kmax, imax, jmax, fullpath):
+def gamma_preprocess_temperature(cfg, dlatlon, dsht, lats, lons, sl, kmax, imax, jmax, fullpath):
     """12-month climatology of surface temperature → daily spectral temperature (365 days)."""
     print("  Processing temperature climatology (Gamma_AC)...")
+    y0, y1 = str(cfg["start_year"]), str(cfg["end_year"])
     url   = ("http://psl.noaa.gov/thredds/dodsC/Datasets/ncep.reanalysis/"
              "Monthlies/surface/air.sig995.mon.mean.nc")
-    Dtemp = xr.open_dataset(url, autoclose=True)
+    Dtemp = xr.open_dataset(url, autoclose=True).sel(
+        time=slice(f"{y0}-01-01", f"{y1}-12-31"))
     tsurf_climo = Dtemp.air.groupby("time.month").mean(dim="time")   # (12, lat, lon)
 
     regridder      = xe.Regridder(tsurf_climo[0], dlatlon, "bilinear")
@@ -332,13 +334,14 @@ def gamma_preprocess_temperature(dlatlon, dsht, lats, lons, sl, kmax, imax, jmax
     return temp_coeffs
 
 
-def gamma_preprocess_surface_pressure(dlatlon, dsht, lats, lons, imax, fullpath):
+def gamma_preprocess_surface_pressure(cfg, dlatlon, dsht, lats, lons, imax, fullpath):
     """12-month ln(ps) climatology → daily spectral lnps (365 days)."""
     print("  Processing surface pressure climatology (Gamma_AC)...")
+    y0, y1 = str(cfg["start_year"]), str(cfg["end_year"])
     url = ("http://psl.noaa.gov/thredds/dodsC/Datasets/ncep.reanalysis/"
            "Monthlies/surface_gauss/pres.sfc.mon.mean.nc")
     Dps    = xr.open_dataset(url, autoclose=True)
-    psmean = Dps.pres.sel(time=slice("1994-01-01", "2024-12-01")).groupby(
+    psmean = Dps.pres.sel(time=slice(f"{y0}-01-01", f"{y1}-12-31")).groupby(
         "time.month").mean(dim="time")
     lnps   = np.log(psmean / (1000 * 100))
 
@@ -414,7 +417,7 @@ def gamma_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig, kmax, jmax,
     print(f"    Saved {os.path.basename(outfile)}")
 
 
-def gamma_preprocess_winds(dlatlon, vsht, dsht, disht, divsht,
+def gamma_preprocess_winds(cfg, dlatlon, vsht, dsht, disht, divsht,
                            lnps_allmonths, lnps_coeffs,
                            sl, kmax, mw, zw, jmax, imax, lats, lons, fullpath):
     """
@@ -424,6 +427,7 @@ def gamma_preprocess_winds(dlatlon, vsht, dsht, disht, divsht,
     from subs1_utils import vortdivspec, gradq
 
     print("  Processing wind climatology (Gamma_AC)...")
+    y0, y1 = str(cfg["start_year"]), str(cfg["end_year"])
     url_u = ("http://psl.noaa.gov/thredds/dodsC/Datasets/ncep.reanalysis/"
              "Monthlies/pressure/uwnd.mon.mean.nc")
     url_v = ("http://psl.noaa.gov/thredds/dodsC/Datasets/ncep.reanalysis/"
@@ -438,7 +442,7 @@ def gamma_preprocess_winds(dlatlon, vsht, dsht, disht, divsht,
     Dair  = xr.open_dataset(url_t, autoclose=True)
     Dshum = xr.open_dataset(url_q, autoclose=True)
 
-    sel  = dict(time=slice("1994-01-01", "2024-12-01"))
+    sel  = dict(time=slice(f"{y0}-01-01", f"{y1}-12-31"))
     uwnd_clim = Duwnd.uwnd.sel(**sel).groupby("time.month").mean(dim="time")
     vwnd_clim = Dvwnd.vwnd.sel(**sel).groupby("time.month").mean(dim="time")
     air_clim  = Dair.air.sel(**sel).groupby("time.month").mean(dim="time")
@@ -613,13 +617,13 @@ def main():
         else:
             _, topog_gg = preprocess_topography(dlatlon, dsht, fullpath)
             gamma_preprocess_landsea(topog_gg, lats, lons, fullpath)
-            gamma_preprocess_temperature(dlatlon, dsht, lats, lons, sl,
+            gamma_preprocess_temperature(cfg, dlatlon, dsht, lats, lons, sl,
                                          kmax, imax, jmax, fullpath)
             lnps_coeffs, lnps_allmonths = gamma_preprocess_surface_pressure(
-                dlatlon, dsht, lats, lons, imax, fullpath)
+                cfg, dlatlon, dsht, lats, lons, imax, fullpath)
             gamma_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig,
                                      kmax, jmax, imax, fullpath)
-            gamma_preprocess_winds(dlatlon, vsht, dsht, disht, divsht,
+            gamma_preprocess_winds(cfg, dlatlon, vsht, dsht, disht, divsht,
                                    lnps_allmonths, lnps_coeffs,
                                    sl, kmax, mw, zw, jmax, imax, lats, lons, fullpath)
             print()

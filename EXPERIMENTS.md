@@ -26,7 +26,6 @@ Atmospheric-Teleconnection-Model-main/   ← code lives here
 │   └── smoke_test.sh            ← cheap end-to-end pipeline check, see "Smoke Test" below
 │
 ├── student_tools/               ← Jupyter/ipywidgets UI, see "Student Tools" below
-│   ├── Generate_Heating_and_ShapeScale.ipynb
 │   └── Configure_and_Run_Experiment.ipynb
 │
 ├── config/
@@ -176,24 +175,41 @@ days already completed, then re-run step 2 (and steps 3–4 afterward).
 
 ## Student Tools
 
-`student_tools/` has two Jupyter notebooks (need `jupyterlab`/`ipywidgets`,
-both in `Environments/agcm_environment.yml`) that wrap the command-line
-workflow above in a form UI — no hand-editing YAML or the command line
-required. Open them in JupyterLab from anywhere inside the repo (they
-locate the project root automatically).
+`student_tools/Configure_and_Run_Experiment.ipynb` (needs `jupyterlab`/
+`ipywidgets`, both in `Environments/agcm_environment.yml`) wraps the whole
+command-line workflow above — generating input files *and* running the
+pipeline — in a single form UI. No hand-editing YAML or the command line
+required. Open it in JupyterLab from anywhere inside the repo (it locates
+the project root automatically).
 
-**`Generate_Heating_and_ShapeScale.ipynb`** — two panels:
-- *Heating file* (`fixed_season`, or an optional diagnostic-only file for
-  `gamma_ac` — not used by the running `gamma_ac` model): wraps
-  `scripts/generate_heating.py`, itself a thin wrapper over
-  `01_preprocess.py --heating-only` (no new science, just a friendlier
-  interface).
-- *Shape/scale files* (`gamma_ac` — what the model actually uses for its
-  daily stochastic heating draw): wraps `scripts/generate_shape_scale.py`.
-  Fit a "Control" climatology, a "Composite" fit from event-year windows you
-  specify (e.g. real El Nino years, the same technique behind `AC_warm`'s
+Every default in the notebook traces back to a real, verified control
+experiment: `fixed_season` defaults to `T63L26_JJA_1979-2023`
+(`config/experiments/T63L26_JJA_1979-2023.yaml`); `gamma_ac` defaults to
+`AC_Test` (`config/experiments/AC_Test.yaml`, `shapeAC.pt`/`scaleAC.pt`).
+Switching **Model** swaps in that model's control defaults and its matching
+generation panel below the top fields:
+
+- **`fixed_season`** shows a *Generate Heating File* panel. Its "Heating
+  source" dropdown defaults to "Use control default (JJA 1979-2023)" — the
+  preprocess directory already has that file, so nothing needs generating.
+  Choosing "Generate new: custom file / from CCA / from CESM2 / from ERA5"
+  reveals the matching input field and a Generate button, which wraps
+  `scripts/generate_heating.py` (itself a thin wrapper over
+  `01_preprocess.py --heating-only` — no new science, just a friendlier
+  interface). Generation writes directly into the **Heating name**/
+  **Preprocess dir** fields already set above, so there's nothing to retype
+  before running.
+- **`gamma_ac`** shows a *Generate Shape/Scale Files* panel — these are
+  what the model actually uses for its daily stochastic heating draw
+  (`heat.ggrid_*.pt` for `gamma_ac` is diagnostic-only, tucked into
+  Advanced settings). Its dropdown defaults to "Use control default
+  (shapeAC.pt / scaleAC.pt)". Choosing "Fit new: Control period" or
+  "Fit new: Composite (e.g. El Nino)" or "Generate: No heating (zero)"
+  wraps `scripts/generate_shape_scale.py`. Fit a plain climatology
+  ("Control period"), a composite from event-year windows you specify
+  (e.g. real El Nino years, the same technique behind `AC_warm`'s
   `shapeAC_Warm.pt`/`scaleAC_Warm.pt`), or generate an explicit all-zero
-  "No heating" pair. This fitting logic was ported this session from
+  pair. This fitting logic was ported from
   `Gamma_AC_Model/reference_notebooks/preprocess.Gamma_heating.ipynb`
   (previously manually-run-cells-only, no reusable function existed) —
   verified to reproduce the real `shapeAC_Warm.pt`/`scaleAC_Warm.pt`
@@ -201,18 +217,21 @@ locate the project root automatically).
   and date range. Composite windows must each span a full annual cycle
   (365/366 days, e.g. Jul-1-to-Jun-30) so the day-of-year composite has
   complete coverage — the tool validates this and raises a clear error
-  rather than silently producing a partial-year result.
+  rather than silently producing a partial-year result. On success, the
+  **Shape file**/**Scale file** fields below auto-populate with the
+  freshly generated `shape_<name>.pt`/`scale_<name>.pt`, so there's nothing
+  to retype before running.
 
-**`Configure_and_Run_Experiment.ipynb`** — curated widgets for the config
-fields that actually vary per experiment (model type, season/heating,
-years, your own `experiment_root`/`experiment_name`, run length,
-cold_start/toffset, shape/scale overrides for `gamma_ac`, control
-experiment, plot vars), with the rarely-touched advanced fields (zw, kmax,
-chunk size, etc.) collapsed and defaulted from `config/defaults.yaml`. A
-"Build Config" button writes the YAML; "Run Pipeline" then runs all 4 steps
-in sequence, stopping at the first failure. If `cold_start` is checked and
-the target experiment directory already exists, you're shown an explicit
-confirmation button before anything is deleted.
+Below the generation panel, curated widgets cover the rest of the config
+fields that vary per experiment (your own `experiment_root`/
+`experiment_name`, run length, cold_start/toffset, control experiment, plot
+vars), with the rarely-touched advanced fields (zw, kmax, chunk size, the
+diagnostic `gamma_ac` heating file, legacy heating-filename overrides,
+etc.) collapsed and defaulted from `config/defaults.yaml`. A "Build Config"
+button writes the YAML; "Run Pipeline" then runs all 4 steps in sequence,
+stopping at the first failure. If `cold_start` is checked and the target
+experiment directory already exists, you're shown an explicit confirmation
+button before anything is deleted.
 
 You point `experiment_root` at your own directory — you won't have write
 access to the instructor's production experiment data, so there's no
