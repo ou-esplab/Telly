@@ -1,0 +1,33 @@
+# Gamma_AC warm experiment — 2160 days (6 years) complete
+#
+# The completed run used shapeAC_Warm.pt/scaleAC_Warm.pt (gamma-distribution
+# parameters fit to composited El Nino precipitation, see
+# Gamma_AC_Model/reference_notebooks/preprocess.Gamma_heating.ipynb), set by
+# manually editing Gamma_AC_Model/reference_notebooks/RunModel.Gamma.ipynb —
+# confirmed from that notebook's own stored execution output.
+#
+# CAUTION: the current scripts/02_run_model.py -> RunModel.Gamma.py pipeline
+# hardcodes shapeAC.pt/scaleAC.pt (the control/default files) with no way to
+# select shapeAC_Warm.pt/scaleAC_Warm.pt per experiment. Extending or
+# restarting this experiment through the automated pipeline as-is would
+# silently use the WRONG (control) gamma parameters, not the warm ones this
+# run was actually generated with. RunModel.Gamma.py needs a shape/scale
+# file selection mechanism added before this config can be safely re-run or
+# extended that way.
+model_type: gamma_ac
+start_year: 1979
+end_year: 2023
+season: annual
+heating_name: warm
+
+preprocess_path_override: /data/esplab/kpegion/projects/AGCM/AnnualCycle
+experiment_name: AC_warm   # exact output directory name under experiment_root (no formula applied)
+preprocess_root: /data/esplab/kpegion/projects/AGCM/AnnualCycle
+
+run_length_days: 2160
+cold_start: false
+toffset: 2160
+
+control_experiment: null
+spinup_days: 60
+plot_vars: [vvel, uvel, geo]

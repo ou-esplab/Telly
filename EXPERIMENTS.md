@@ -30,7 +30,7 @@ Atmospheric-Teleconnection-Model-main/   ← code lives here
 │   └── experiments/            ← one YAML per experiment
 │       ├── T63L26_DJF_*.yaml   (9 DJF configs)
 │       ├── T63L26_JJA_*.yaml   (9 JJA configs)
-│       └── AC_*.yaml           (2 Gamma_AC configs — AC_warm removed, see Gamma_AC section)
+│       └── AC_*.yaml           (3 Gamma_AC configs)
 │
 ├── FixedSeason_Model/          ← fixed-season model variant
 │   ├── subs1_utils.py          ← core physics (imported by scripts); includes press_to_sig
@@ -89,8 +89,11 @@ All data lives outside the repository under two top-level directories on
 │       ├── temp.spectral.pt
 │       ├── lnps.spectral.pt
 │       ├── vortsig / divsig / tsig / usig / vsig *.pt
-│       ├── shapeAC.pt, scaleAC.pt           ← gamma params for AC_Test
-│       ├── shapeAC_Warm.pt, scaleAC_Warm.pt ← NOT currently loaded by any script (see note below)
+│       ├── shapeAC.pt, scaleAC.pt           ← gamma params for AC_Test (control)
+│       ├── shapeAC_Warm.pt, scaleAC_Warm.pt ← gamma params for AC_warm, fit to composited
+│       │                                       El Nino precipitation; NOT selectable by the
+│       │                                       current scripts/02_run_model.py pipeline for a
+│       │                                       fresh run — see note below
 │       └── shape_noheating.pt, scale_noheating.pt ← used by RunModel.Gamma-noheating.py only
 │
 └── AGCM_Experiments/              ← OUTPUTS from the model
@@ -98,7 +101,7 @@ All data lives outside the repository under two top-level directories on
     ├── T63L26_DJF_ALL_1999-2020/
     ├── ...                        ← one subdirectory per experiment
     ├── AC_Test/
-    ├── AC_warm_SUSPECT_gamma_params/  ← removed from active use, see note below
+    ├── AC_warm/
     └── AC_noheating/
 ```
 
@@ -306,22 +309,43 @@ period.  Output is post-processed annually by `PressureInterpMetPy.py` (one
 | Experiment dir | Preprocess files | Days run | Postprocessed output |
 |----------------|-----------------|----------|----------------------|
 | `AC_Test` | `shapeAC.pt`, `scaleAC.pt` | **54750** (150 yrs) | `geo_Pressure.nc` (all years); `geo_Pressure_days_1-6540.nc`, `_days_1-18240.nc`; ~122 annual geo files |
+| `AC_warm` | `shapeAC_Warm.pt`, `scaleAC_Warm.pt` | **2160** (6 yrs) | `geo_Pressure_days_1-2160.nc`, `uvel_Pressure_days_1-2160.nc`, `vvel_Pressure_days_1-2160.nc` |
 | `AC_noheating` | `shape_noheating.pt`, `scale_noheating.pt` | **0** (not yet run) | — |
 
 **Control experiment**: `AC_Test` (default gamma distribution parameters).
 
-**`AC_warm` removed from active use**: `RunModel.Gamma.py` hardcodes
-`prepath+'shapeAC.pt'`/`'scaleAC.pt'` with no mechanism to select a different
-shape/scale file per experiment — `shapeAC_Warm.pt`/`scaleAC_Warm.pt` exist in
-the preprocess directory but are never loaded by any current script. The
-already-completed `AC_warm` run (2160 days) was therefore very likely
-integrated with the *same* gamma parameters as the `AC_Test` control, not
-distinct "warm" ones, despite its name and prior documentation here claiming
-otherwise. Its output has been moved aside on disk to
-`AC_warm_SUSPECT_gamma_params/` (not deleted, in case it's worth inspecting
-later) and `config/experiments/AC_warm.yaml` removed from the repo. Re-running
-a real "warm" experiment requires first adding a way for `RunModel.Gamma.py`
-to select a non-default shape/scale file per experiment — not yet done.
+**`shapeAC_Warm.pt`/`scaleAC_Warm.pt`**: gamma-distribution parameters fit
+(via the same method-of-moments approach as the control) to precipitation
+composited across three real El Nino episodes — Jul 2002–Jun 2003, Jul
+2009–Jun 2010, Jul 2015–Jun 2016 — see
+`Gamma_AC_Model/reference_notebooks/preprocess.Gamma_heating.ipynb`.
+
+**Correction (previously this section incorrectly claimed `AC_warm` was
+scientifically invalid and removed it from the repo)**: `RunModel.Gamma.py`
+(the current `.py` script) hardcodes `prepath+'shapeAC.pt'`/`'scaleAC.pt'`
+with no mechanism to select a different shape/scale file per experiment,
+which led to the mistaken conclusion that the completed `AC_warm` run must
+have used the wrong (control) parameters. That conclusion didn't check
+`Gamma_AC_Model/reference_notebooks/RunModel.Gamma.ipynb`, which is what
+actually produced the `AC_warm` output — its stored execution output
+(real `FutureWarning` traces from `torch.load`, not just source code)
+confirms `expname = 'AC_warm'`, `datapath` pointing at the real
+`AGCM_Experiments/AC_warm/`, and `shape = torch.load(prepath+'shapeAC_Warm.pt')`
+/ `scale = torch.load(prepath+'scaleAC_Warm.pt')` genuinely executing. The
+completed run used the correct El Nino-specific parameters via a manually
+edited notebook; the current `.py` script just never had that
+per-experiment selection ported into it. `AC_warm`'s output and config
+have been restored.
+
+**Remaining real gap**: extending or restarting `AC_warm` through the
+current `scripts/02_run_model.py` → `RunModel.Gamma.py` pipeline would
+silently use the wrong (control) shape/scale files, since that pipeline
+still has no per-experiment selection mechanism — only the original
+manually-edited notebook did. `RunModel.Gamma.py` needs a
+`--shape-file`/`--scale-file`-style option (matching the
+`--datapath`/`--prepath`/`--zw`/`--kmax`/`--tl` pattern already added)
+before `AC_warm` can be safely extended or rerun via the automated
+pipeline.
 
 **How to run Gamma_AC experiments via the existing script directly**:
 ```bash
