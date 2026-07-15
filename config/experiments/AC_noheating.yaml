@@ -9,8 +9,14 @@
 # now takes --shapefile/--scalefile, so this config alone is sufficient —
 # RunModel.Gamma-noheating.py is no longer needed for a pipeline-driven run.
 model_type: gamma_ac
-start_year: 1979
-end_year: 2023
+# start_year/end_year: informational only -- this shared preprocess
+# directory's background-state climatology actually uses two different
+# periods (surface pressure & winds: 1994-2024; temperature: unsliced,
+# ~1948-2025) -- see AC_Test.yaml's comment / EXPERIMENTS.md's Gamma_AC
+# section for the full explanation. Set to 1994/2024 as the best single
+# approximation (accurate for 2 of 3 fields).
+start_year: 1994
+end_year: 2024
 season: annual
 heating_name: noheating
 

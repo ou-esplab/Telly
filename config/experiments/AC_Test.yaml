@@ -2,8 +2,24 @@
 # This is the primary long control run for the Gamma_AC model.
 # Data spans 1950-01-01 through 2099-12-24 in 30-day output chunks.
 model_type: gamma_ac
-start_year: 1979
-end_year: 2023
+# start_year/end_year: informational only for this config -- the preprocess
+# directory below already exists and is complete, so these are never read
+# (01_preprocess.py skips straight to "already complete"). They also can't
+# describe a single true period: the real background-state climatology that
+# was actually built uses TWO DIFFERENT periods for different fields --
+# surface pressure & winds are sliced to 1994-01-01/2024-12-01, but
+# temperature has no date slicing at all and reflects the full NCEP
+# reanalysis period of record at fetch time (~1948 through the Apr 2025
+# generation date, per temp.spectral.pt's mtime) -- confirmed identical in
+# Gamma_AC_Model/reference_notebooks/preprocess_gamma.ipynb and every copy
+# of it found. scripts/01_preprocess.py's gamma_preprocess_* functions now
+# read cfg start_year/end_year consistently for all three fields, so this
+# inconsistency can't recur in a newly-generated preprocess directory -- but
+# this existing one predates that fix and is not being regenerated (see
+# EXPERIMENTS.md's Gamma_AC section for the full writeup). Set to 1994/2024
+# here since that's accurate for 2 of the 3 fields (pressure & winds).
+start_year: 1994
+end_year: 2024
 season: annual
 heating_name: Test
 

@@ -431,6 +431,46 @@ actual no-heating run. `AC_noheating.yaml` now sets
 run of any of the three current experiments (it's still there, and still
 directly runnable standalone, but superseded for this purpose).
 
+**Known limitation (documented, not fixed retroactively): the shared
+`AnnualCycle` preprocess directory's background-state climatology mixes two
+different reference periods.** `gamma_preprocess_surface_pressure`/`_winds`
+(surface pressure, u, v, T, q on pressure levels) slice reanalysis data to
+`1994-01-01`–`2024-12-01`, a fixed 30-year window. `gamma_preprocess_temperature`
+(surface temperature, used to build the 3-D background temperature field)
+applies **no date slicing at all**, in the original reference notebook
+(`Gamma_AC_Model/reference_notebooks/preprocess_gamma.ipynb`) or in every
+copy of it found (including a scratch copy at
+`/data/esplab/kpegion/scratch/gammamodel/preprocess_gamma.ipynb`, byte-diffed
+against the repo's version — only the output path/filenames differ, not the
+date logic) — it averages the *entire* NCEP/NCAR Reanalysis 1 period of
+record at fetch time. That dataset starts in 1948 and is continuously
+updated, and `temp.spectral.pt` in the real `AnnualCycle` directory is dated
+April 1, 2025 — so the temperature climatology actually baked into `AC_Test`/
+`AC_warm`/`AC_noheating`'s shared background state is effectively a
+**~1948–2025 (~77-year) mean**, while surface pressure and winds reflect a
+specific **1994–2024 (30-year) window**. This means the model's prescribed
+background state combines a temperature field representing long-term-mean
+conditions with pressure/wind fields representing a more recent, shorter
+window — not a single mutually-consistent reference climate. Under any
+long-term trend (e.g. warming), these two pieces of the background state
+are not on equal footing.
+
+`scripts/01_preprocess.py`'s `gamma_preprocess_temperature`/
+`_surface_pressure`/`_winds` now all read `cfg["start_year"]`/
+`cfg["end_year"]` consistently (previously only surface pressure and winds
+did; temperature was hardcoded to no slicing regardless of any config), so
+this specific inconsistency cannot recur in a newly-generated preprocess
+directory. The existing `AnnualCycle` directory predates that fix and is
+**not being regenerated** — doing so would require re-fetching from live
+NCEP THREDDS endpoints and would change the actual climate `AC_Test`'s
+existing 150-year run represents, which wasn't the point of this fix.
+`AC_Test.yaml`/`AC_warm.yaml`/`AC_noheating.yaml`'s `start_year`/`end_year`
+fields are set to `1994`/`2024` (accurate for 2 of the 3 background fields)
+with a comment pointing back here — they're informational only for these
+three configs, since the preprocess directory they point at already exists
+and is complete, so `01_preprocess.py` never re-reads these two fields for
+them.
+
 **How to run Gamma_AC experiments via the existing script directly**:
 ```bash
 cd Gamma_AC_Model
