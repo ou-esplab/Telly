@@ -126,6 +126,28 @@ def mt_preprocess_surface_pressure(cfg, dlatlon, dsht, imax, fullpath):
 
 
 def mt_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig, kmax, jmax, imax, fullpath):
+    """
+    FixedSeason prescribed heating. Two independent paths:
+
+      heating_source == "custom": copy an already fully-computed heat.ggrid_*.pt
+        tensor in as-is. No climatology, anomaly, or (a)/(b)/(c) below apply.
+
+      heating_source in {cesm2, cca, cmap, cmorph}: build heating from
+        (a) CLIMATOLOGY  -- NCEP precip.mon.mean.nc, averaged over
+            start_year-end_year and the chosen Season.
+        (b) ANOMALY      -- either a precomputed precip ANOMALY file (its
+            own climatology already removed upstream, before it reaches
+            this repo -- cesm2/cca are always this; cfg["anomaly_type"]
+            defaults to "precomputed") OR, for cmap/cmorph only, a real
+            raw-precip anomaly computed here by subtracting that same
+            dataset's own climatology (cfg["anomaly_type"] == "compute"),
+            mirroring gamma_preprocess_heating's CMAP-based approach.
+        (c) MODIFICATIONS (both optional; omitted = today's unchanged
+            behavior): a lat/lon region box (cfg["anomaly_lat_min"/"_max"/
+            "anomaly_lon_min"/"_max"]) and/or a year composite
+            (cfg["anomaly_years"]) -- applied uniformly whether the anomaly
+            was precomputed or just computed above.
+    """
     print(f"  Processing heating (FixedSeason, source={cfg['heating_source']})...")
     m0, m1, m2 = season_month_indices(cfg["season"])
     y0, y1     = str(cfg["start_year"]), str(cfg["end_year"])
@@ -142,27 +164,120 @@ def mt_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig, kmax, jmax, im
         print(f"    Copied custom heating → {outfile}")
         return
 
+    # ------------------------------------------------------------------
+    # (b) ANOMALY -- load the anomaly source file. For cesm2/cca this is
+    # always a precomputed anomaly, used as-is. For cmap/cmorph it may
+    # instead be raw precip, with the anomaly computed just below.
+    # ------------------------------------------------------------------
     if source == "cesm2":
         fprec = cfg.get("cesm2_precip_file")
         if not fprec:
             raise ValueError("heating_source=cesm2 but no cesm2_precip_file in config.")
-        Dprec    = xr.open_dataset(fprec, autoclose=True)
+        Dprec = xr.open_dataset(fprec, autoclose=True)
         rain_anom = Dprec["prec"]
     elif source == "cca":
         fprec = cfg.get("cca_precip_file")
         if not fprec:
             raise ValueError("heating_source=cca but no cca_precip_file in config.")
-        Dprec    = xr.open_dataset(fprec, autoclose=True)
+        Dprec = xr.open_dataset(fprec, autoclose=True)
         rain_anom = Dprec["prec"]
-    elif source == "era5":
-        fprec = cfg.get("era5_precip_file")
+    elif source == "cmap":
+        fprec = cfg.get("cmap_precip_file")
         if not fprec:
-            raise ValueError("heating_source=era5 but no era5_precip_file in config.")
-        Dprec    = xr.open_dataset(fprec, autoclose=True)
-        rain_anom = Dprec["prec"]
+            raise ValueError("heating_source=cmap but no cmap_precip_file in config.")
+        Dprec = xr.open_dataset(fprec, autoclose=True)
+        rain_anom = Dprec["precip"]
+    elif source == "cmorph":
+        fprec = cfg.get("cmorph_precip_glob")
+        if not fprec:
+            raise ValueError("heating_source=cmorph but no cmorph_precip_glob in config.")
+        Dprec = xr.open_mfdataset(fprec, autoclose=True)
+        rain_anom = Dprec["cmorph"]
     else:
-        raise ValueError(f"Unknown heating_source '{source}'. Use: cesm2, cca, era5, custom.")
+        raise ValueError(f"Unknown heating_source '{source}'. Use: cesm2, cca, cmap, cmorph, custom.")
 
+    anomaly_type = cfg.get("anomaly_type", "precomputed")
+    if anomaly_type == "compute":
+        if source not in ("cmap", "cmorph"):
+            raise ValueError(
+                f"anomaly_type=compute is only supported for cmap/cmorph sources, got '{source}'."
+            )
+        # Anomaly relative to this SAME dataset's own climatology -- mirrors
+        # gamma_preprocess_heating's CMAP-based approach exactly, rather than
+        # mixing in the NCEP-reanalysis climatology from step (a) below.
+        group_key = "time.month" if source == "cmap" else "time.dayofyear"
+        clim = rain_anom.groupby(group_key).mean(dim="time")
+        rain_anom = rain_anom.groupby(group_key) - clim
+        print(f"    Anomaly computed from {source}'s own climatology (grouped by {group_key})")
+
+    # ------------------------------------------------------------------
+    # (c) MODIFICATIONS -- both optional; omitted == today's unchanged
+    # behavior (rain_anom used exactly as loaded/computed above).
+    # ------------------------------------------------------------------
+    anomaly_years = cfg.get("anomaly_years")
+    if anomaly_years:
+        if "time" not in rain_anom.dims:
+            raise ValueError(
+                f"anomaly_years={anomaly_years!r} given but the {source} anomaly file "
+                "has no 'time' dimension to select years from."
+            )
+        # Composite: for each requested year, average this Season's months
+        # (same m0/m1/m2 used for the climatology below) within that year,
+        # then average across years -- mirrors the enso_warm_years pattern
+        # in gamma_preprocess_heating, adapted to fixed_season's Season
+        # concept instead of one fixed month.
+        season_months = [m0 + 1, m1 + 1, m2 + 1]  # xarray's time.month is 1-based
+        composite = None
+        for yr in anomaly_years:
+            yr = str(yr)
+            da_yr = rain_anom.sel(time=slice(f"{yr}-01-01", f"{yr}-12-31"))
+            da_yr = da_yr.sel(time=da_yr["time.month"].isin(season_months))
+            if da_yr.sizes.get("time", 0) == 0:
+                raise ValueError(
+                    f"anomaly_years: no time steps found for year {yr} "
+                    f"(season={cfg['season']}) in the {source} anomaly file."
+                )
+            yr_mean = da_yr.mean(dim="time")
+            composite = yr_mean if composite is None else composite + yr_mean
+        rain_anom = composite / len(anomaly_years)
+        print(f"    Anomaly composited over years {anomaly_years} "
+              f"(season={cfg['season']} months only)")
+
+    lat_min = cfg.get("anomaly_lat_min")
+    lat_max = cfg.get("anomaly_lat_max")
+    lon_min = cfg.get("anomaly_lon_min")
+    lon_max = cfg.get("anomaly_lon_max")
+    region_bounds = (lat_min, lat_max, lon_min, lon_max)
+    if any(b is not None for b in region_bounds):
+        if not all(b is not None for b in region_bounds):
+            raise ValueError(
+                "Partial region box given -- anomaly_lat_min/anomaly_lat_max/"
+                "anomaly_lon_min/anomaly_lon_max must all be set together, or all "
+                "left unset."
+            )
+        lat_cond = (rain_anom["lat"] >= lat_min) & (rain_anom["lat"] <= lat_max)
+        lon_cond = (rain_anom["lon"] >= lon_min) & (rain_anom["lon"] <= lon_max)
+        rain_anom = xr.where(lat_cond & lon_cond, rain_anom, 0.0)
+        print(f"    Anomaly masked to region lat[{lat_min},{lat_max}] "
+              f"lon[{lon_min},{lon_max}] (0-360 convention)")
+
+    if "time" in rain_anom.dims:
+        # anomaly_years is the only thing above that collapses a time
+        # dimension. Without it, a genuinely multi-timestep source (any real
+        # cmap/cmorph download, unlike cesm2/cca's historically pre-reduced
+        # files) can't be combined with the single 2D climatology below --
+        # fail clearly here rather than deep inside an xarray/regrid error.
+        raise ValueError(
+            f"The {source} anomaly source still has a 'time' dimension "
+            f"({rain_anom.sizes['time']} steps) after modifications -- set "
+            "anomaly_years to composite it down to a single field, or point at "
+            "a file that's already a single 2D anomaly."
+        )
+
+    # ------------------------------------------------------------------
+    # (a) CLIMATOLOGY -- NCEP precip.mon.mean.nc, Season mean over
+    # start_year-end_year. Unchanged from before.
+    # ------------------------------------------------------------------
     fclim     = os.path.join(cfg["input_data_path"], "precip.mon.mean.nc")
     Dclim     = xr.open_dataset(fclim, autoclose=True).sel(
         time=slice(f"{y0}-01-01", f"{y1}-12-31"))
@@ -188,7 +303,7 @@ def mt_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig, kmax, jmax, im
 
     heat = torch.zeros((kmax, jmax, imax), dtype=torch.float64)
     for k in range(kmax):
-        heat[k] = tmp * vert_s[k] * beta
+        heat[k] = torch.from_numpy(tmp * vert_s[k] * beta)
 
     torch.save(heat, outfile)
     print(f"    Saved {os.path.basename(outfile)}")
@@ -556,7 +671,13 @@ def main():
     kmax = cfg["kmax"]
 
     fullpath = build_preprocess_path(cfg)
-    heating_file = os.path.join(fullpath, f"heat.ggrid_{cfg['heating_name']}.pt")
+    # Mirrors 02_run_model.py's own heating_file resolution exactly -- without
+    # this, an experiment using heating_file_override (an existing file whose
+    # name doesn't match heat.ggrid_{heating_name}.pt) would look incomplete
+    # here even though it's already fully built, and step 1 would try (and
+    # fail) to regenerate it via heating_source=custom with no heating_file set.
+    heating_filename = cfg.get("heating_file_override") or f"heat.ggrid_{cfg['heating_name']}.pt"
+    heating_file = os.path.join(fullpath, heating_filename)
 
     # Decide what to regenerate
     base_exists = (
