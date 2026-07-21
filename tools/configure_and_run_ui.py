@@ -139,33 +139,6 @@ def build_and_display_ui(project_root):
     r_plot_vars = w.SelectMultiple(options=["uvel", "vvel", "geo", "temp"], value=["uvel", "vvel", "geo", "temp"],
                                     description="Vars (postprocess &amp; plot):", style=_LABEL_STYLE)
 
-    # Hover-tooltip info icon (native browser tooltip via the HTML title attribute
-    # -- no extra click, no extra state) explaining what Start/End yr mean, which
-    # differs by model: load-bearing for fixed_season, currently just a label for
-    # gamma_ac's diagnostic file but does drive its real climatology period too
-    # (see scripts/01_preprocess.py's gamma_preprocess_temperature/_surface_pressure/
-    # _winds, which now read these instead of a hardcoded range).
-    r_years_info = w.HTML()
-
-
-    def _update_years_info(*_):
-        if r_model_type.value == "fixed_season":
-            tip = ("Climatology period actually used: NCEP reanalysis fields are averaged over this "
-                   "range, then combined into the chosen Season&#39;s mean -- this directly determines "
-                   "the model&#39;s background climate.")
-        else:
-            tip = ("Climatology period used to build gamma_ac&#39;s annual-cycle background state "
-                   "(temperature, surface pressure, winds) from NCEP reanalysis. Note: the existing real "
-                   "AnnualCycle preprocess directory was built before this was consistently applied -- its "
-                   "temperature field actually reflects the full period of record (~1948-2025), not "
-                   "1994-2024 like pressure/winds. A NEW directory generated from here will be consistent.")
-        r_years_info.value = f"<span title=\"{tip}\" style='cursor:help;color:#666;'>&#9432; what do these mean?</span>"
-
-
-    r_model_type.observe(_update_years_info, names="value")
-    _update_years_info()
-
-
     def experiment_dir():
         return os.path.join(r_experiment_root.value, r_experiment_name.value)
 
@@ -1032,7 +1005,7 @@ def build_and_display_ui(project_root):
     run_panel = w.VBox([
         w.HTML("<b>Configure &amp; Run Experiment</b>"),
         r_model_type, r_experiment_root, r_experiment_name,
-        r_season, r_start_year, r_end_year, r_years_info, r_preprocess_path,
+        r_season, r_start_year, r_end_year, r_preprocess_path,
         r_run_length_days, r_cold_start, r_toffset, r_toffset_status,
         heating_gen_box, ss_gen_box, r_shape_file, r_scale_file,
         postprocessing_box,
