@@ -43,8 +43,8 @@ zw = args.zw
 kmax = args.kmax
 expname=expstub
 
-DataSetnames=['vvel','uvel','geo']
-Datanames=['v','u','geo']
+DataSetnames=['vvel','uvel','geo','temp']
+Datanames=['v','u','geo','t']
 
 # Advanced Variables
 imax = None

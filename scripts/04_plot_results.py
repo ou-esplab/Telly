@@ -129,6 +129,10 @@ def main():
             print(f"  WARNING: unknown plot_var '{varfile}', skipping.")
             continue
         fieldname, longname, units, clev_spec, cmap = VAR_META[varfile]
+        if varfile == "temp" and cfg["model_type"] == "gamma_ac":
+            # Gamma_AC_Model's raw/pressure-level temp field is named "t" (matching
+            # uvel/vvel's single-letter convention), not "temp" like fixed_season's.
+            fieldname = "t"
         cmin, cmax, cint = clev_spec
 
         for lev in plot_levs:
