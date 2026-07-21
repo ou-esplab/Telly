@@ -1,84 +1,159 @@
-# Atmospheric Teleconnection Model
+# Telly — Atmospheric Teleconnection Model
 
+This repository is the OU ESPLab fork of the Atmospheric Teleconnection Model (ATM), a
+simplified-physics atmospheric general circulation model for idealized climate dynamics studies.
+It tracks the upstream model but adds a config-driven pipeline and a form-based Jupyter UI
+(`student_tools/Configure_and_Run_Experiment.ipynb`) aimed at students running experiments without
+hand-editing notebooks or YAML.
 
-## Getting Started (Installation):
+- **Original model repository**: https://github.com/jsb288/Atmospheric-Teleconnection-Model
+- **Model paper**: Kirtman, B. P., and Coauthors, 2025: A Simplified-Physics Atmosphere General
+  Circulation Model for Idealized Climate Dynamics Studies. *Bull. Amer. Meteor. Soc.*, 106,
+  E2073–E2086, https://doi.org/10.1175/BAMS-D-24-0196.1.
 
-1) Install the project from Github  
-Click the green "<>Code" button, click "Download ZIP", find the project in your downloads, and unzip the folder (extract all). You can move the entire Atmosperic-Teleconnection-Model folder, but moving individual files within that folder may cause problems if all scripts' folder path variables are not changed accordingly.
+If you use this model, please cite the paper above and refer to the original repository for the
+underlying (non-fork-specific) model documentation.
 
-2) Make sure you have the correct environment  
-2A. `Environments/agcm_environment.yml` is the primary, actively-maintained environment spec, covering all 4 pipeline steps — start there for a new setup (`conda env create -f Environments/agcm_environment.yml`). `Environments/agcm_environment_{linux,mac,windows}.yml` are known-good snapshots frozen via `conda env export` on a specific machine at a specific point in time; use one of those only as a fallback reference if `agcm_environment.yml` doesn't resolve on your machine — their pinned build hashes make them unlikely to solve on a different machine/date. For more on creating a conda environment from a yml file, refer to the [Conda User Guide](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file).<br/>
-<br/>
-2B. Some users have reported difficulties using the yml environment files. Using the following commands in a terminal is an alternative strategy:
-   - conda install -n agcm_environment xarray pandas scipy netcdf4 metpy pyyaml matplotlib cartopy jupyter pytorch;
-   - conda install -n agcm_environment -c conda-forge xesmf;
-   - conda activate agcm_environment;
-   - pip3 install torch-harmonics==0.6.3
+## Getting Started
 
-**Students**: instead of steps 3-7 below, consider using
-`student_tools/Configure_and_Run_Experiment.ipynb` — a single Jupyter notebook with a form-based UI
-that generates heating/shape-scale input files and runs the same 4-step pipeline, without hand-editing
-notebooks or the command line. See `EXPERIMENTS.md`'s "Student Tools" section.
+### 1. Get the code from GitHub
 
-3) Edit Preprocess.ipynb variables  
-Edit Preprocess.ipynb to choose your resolution, number of months to run, and make sure your folder paths are correctly set - that is, where to write the output. Documentation in the notebooks should help in doing this.
+Clone the repository:
 
-4) Run Preprocess.ipynb as a jupyter notebook  
-You can easily modify the topography, background state or the heating in this script, but we suggest running without modification first.
+```bash
+git clone git@github.com:ou-esplab/Telly.git
+# or, over HTTPS:
+git clone https://github.com/ou-esplab/Telly.git
+```
 
-5) Edit RunModel.beta.ipynb (or RunModel.PrescribedMean.ipynb) variables  
-Choose which model you are using and edit its variables according to your requirements. Variables included in both postprocess and the model must match.
+If you don't use git, you can also click the green "<> Code" button on the
+[repository page](https://github.com/ou-esplab/Telly) and choose "Download ZIP", then unzip the
+folder. You can move the entire folder, but moving individual files within it may break scripts
+that locate the project root relative to their own file path.
 
-6) Run RunModel.beta.ipynb (or RunModel.PrescribedMean.ipynb)  
-The RunModel.beta.ipynb file is the weakly prescribed mean version and the RunModel.PrescribedMean.ipynb file is the strongly prescribed mean version of the model. See manuscript for detailed discussion of the two versions of the model.  
-(In the current YAML-config pipeline described in EXPERIMENTS.md, these correspond to `model_type: fixed_season` with `model_subtype: weakly_prescribed_mean` or `strongly_prescribed_mean` respectively; the latter is not yet wired into `scripts/02_run_model.py`.)
+### 2. Set up the conda environment
 
-7) Edit and run a Postprocess script  
-Before running the postprocess file, edit the variables to match your data from the preprocess and model files. There are two post-processing scripts in the Postprocess folder for vertical interpolation for sigma to pressure coordinates. The preferred post-processing uses metpy as indicated in the filename. The raw model output is in the native sigma coordinate in the vertical and is on the Gaussian grid for the horizontal.
+`Environments/agcm_environment.yml` is the primary, actively-maintained environment spec, covering
+all 4 pipeline steps:
 
-8) Troubleshooting  
-For any issues, questions or concerns please contact Ben Kirtman at bkirtman@miami.edu.
+```bash
+conda env create -f Environments/agcm_environment.yml
+```
 
+`Environments/agcm_environment_{linux,mac,windows}.yml` are known-good snapshots frozen via `conda
+env export` on a specific machine at a specific point in time; use one of those only as a fallback
+reference if `agcm_environment.yml` doesn't resolve on your machine — their pinned build hashes make
+them unlikely to solve on a different machine/date. See the
+[Conda User Guide](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file)
+for more on creating an environment from a yml file.
 
-## Variable Glossary
-Towards the top of each preprocess, model, and postprocess file you can set the values of the variables relevant to the model. The details of each variable are included below.
+If the yml file gives you trouble, this sequence is a reasonable fallback:
 
+```bash
+conda install -n agcm_environment xarray pandas scipy netcdf4 metpy pyyaml matplotlib cartopy jupyter pytorch
+conda install -n agcm_environment -c conda-forge xesmf
+conda activate agcm_environment
+pip3 install torch-harmonics==0.6.3
+```
 
-### Standard Variables
-In most cases it is only necessary to set values for the standard variables.
+### 3. Run an experiment using the UI
 
-**zw** is the zonal wave number. For standard use, zw should be set to the value of either 42, 63, or 124. Setting the value for zw also sets default values for the following variables: mw, jmax, imax, and steps_per_day.
-<br>Set zw = 42, to set mw = 42, jmax = 64, imax = 128, and steps_per_day = 216.
-<br>Set zw = 63, to set mw = 63, jmax = 96, imax = 192, and steps_per_day = 324.
-<br>Set zw = 124, to set mw = 124, jmax = 188, imax = 376, and steps_per_day = 648.
-<br>Each of these variables (mw, jmax, imax, and steps_per_day) that is given a value in the advanced variables section will instead use that value.
+Most users — especially students — should use
+[`student_tools/Configure_and_Run_Experiment.ipynb`](student_tools/Configure_and_Run_Experiment.ipynb)
+instead of running scripts by hand. Open it in JupyterLab from anywhere inside the repo (it locates
+the project root automatically) and it wraps the whole workflow in a single form UI.
 
-**kmax** is the number of vertical levels. The value of kmax should be 11 or 26 for standard use.
+Every default in the notebook traces back to a real, verified control experiment. Switching
+**Model** swaps in that model's control defaults and its matching generation panel below the top
+fields:
 
-**expname** is the name you want to be given to your experiment. When the data is saved to your computer, it will be saved in a folder with this name. Note that if you run this program twice with the same expname, your first experiment's data will be overwritten.
+- **`fixed_season`** shows a *Generate Heating File* panel. Its "Heating source" dropdown defaults
+  to using the control heating file already present in the preprocess directory, so nothing needs
+  generating. Choosing "Generate new: custom file / from CCA / from CESM2 / from ERA5" reveals the
+  matching input field and a Generate button. Generation writes directly into the **Heating
+  name**/**Preprocess dir** fields already set above, so there's nothing to retype before running.
+- **`gamma_ac`** shows a *Generate Shape/Scale Files* panel — these are what the model actually
+  uses for its daily stochastic heating draw. Its dropdown defaults to using the control
+  shape/scale files. Choosing "Fit new: Control period", "Fit new: Composite (e.g. El Nino)", or
+  "Generate: No heating (zero)" lets you fit a plain climatology, a composite from event-year
+  windows you specify (e.g. real El Nino years), or generate an explicit all-zero pair. Composite
+  windows must each span a full annual cycle (365/366 days, e.g. Jul-1-to-Jun-30) so the
+  day-of-year composite has complete coverage — the tool validates this and raises a clear error
+  rather than silently producing a partial-year result. On success, the **Shape file**/**Scale
+  file** fields below auto-populate with the freshly generated files.
 
-**toffset** is the number of days that have already run when restarting.
+Below the generation panel, curated widgets cover the rest of the config fields that vary per
+experiment (your own `experiment_root`/`experiment_name`, run length, cold_start/toffset, control
+experiment, plot vars), with rarely-touched advanced fields collapsed and defaulted. A "Build
+Config" button writes the YAML; "Run Pipeline" then runs all 4 steps in sequence, stopping at the
+first failure. Check "Run in background (screen)" first if you want the run to survive closing the
+notebook or losing your connection. If `cold_start` is checked and the target experiment directory
+already exists, you're shown an explicit confirmation button before anything is deleted.
 
-**datapath_init** is the directory in which files are saved in the case of a restart. Set this equal to the datapath if restarting in the same directory.
+You should point `experiment_root` at your own directory rather than any shared/instructor
+directory you may not have write access to.
 
-**DataSetname** is the name of the data set. This will be used to name files that are created by this program.
+### 4. Running the pipeline by hand (advanced)
 
-**Dataname** is the name of the data. This is what will be used to label the data in the charts generated by this program.
+If you need to run steps individually, or write your own experiment config:
 
-**dayst** is the number of days over which the data spans. This number will be used to label the data as it's output to files and will also be used to run this program and display the data.
+```bash
+conda activate agcm_environment
+cd Telly   # or wherever you cloned the repo
 
+# Step 1: Generate preprocess files (skip if they already exist)
+python scripts/01_preprocess.py --config config/experiments/<name>.yaml
 
-### Advanced Variables
-While most cases only require setting the standard variables, some cases might require setting some or all advanced variables as well. The following variables should only be changed from their default value if a specific behavior is desired. An advanced variable set to the value of None will use the default case.
+# Step 2: Run the model (set cold_start / toffset in YAML before running)
+python scripts/02_run_model.py --config config/experiments/<name>.yaml
 
-**mw** is the meridional wave number. In the standard case this value is set equal to zw.
+# Step 3: Interpolate to pressure levels
+python scripts/03_postprocess.py --config config/experiments/<name>.yaml
 
-**jmax** is the number of Gaussian latitudes. jmax = imax/2
+# Step 4: Make standard figure set
+python scripts/04_plot_results.py --config config/experiments/<name>.yaml
+```
 
-**imax** is the number of longitude grid points. imax >= 3 * zw + 1. imax must be an even number.
+To **extend** an existing experiment: edit the config YAML, increase `run_length_days`, set
+`cold_start: false`, and set `toffset` to the number of days already completed, then re-run step 2
+(and steps 3–4 afterward).
 
-**steps_per_day** is the number of time steps per day. It gives you the delta t in the time differencing scheme. The length of a day is 86400 seconds, so delta t = 86400/steps_per_day. Changing this number implies time step changes and should be implemented carefully. The values used in the standard case were determined expertimentally.
+### Repository layout
 
-**custom_path** is the full path of the folder in which you wish to save your data when running the model, or the full path of the folder you wish to retrieve your data from when running the postprocess. If custom_path is set, expname is ignored. Note that this must be an existing folder. If you use a custom_path when running the model, you must use the same custom_path in postprocess to access the same data.
+```
+scripts/                    ← 4-step pipeline (01_preprocess.py … 04_plot_results.py),
+                               plus generate_heating.py / generate_shape_scale.py helpers
+                               and smoke_test.sh
+student_tools/               ← Jupyter/ipywidgets UI (Configure_and_Run_Experiment.ipynb)
+config/
+├── defaults.yaml            ← values shared by every experiment config
+├── examples/                ← documented YAML templates
+└── experiments/             ← one YAML per experiment
+FixedSeason_Model/            ← fixed-season model variant (core physics + reference notebooks)
+Gamma_AC_Model/               ← annual-cycle stochastic model variant
+Postprocess/                  ← standalone postprocess notebooks (reference)
+Environments/                 ← conda env files per platform
+```
 
-**custom_kmax** is used to safeguard against using unexpected values for the kmax. If custom_kmax is set, it will be used instead of kmax. By default the program only supports kmax with a value of either 11 or 26. Other values are implementable, but the user must modify subs1_utils.py routine bscst. If unclear email bkirtman@miami.edu for clarification.
+Each model directory's `reference_notebooks/` subfolder holds the original, reference-only
+notebooks this pipeline was ported from — they're not invoked by anything under `scripts/`.
+
+### Smoke test
+
+```bash
+conda activate agcm_environment
+bash scripts/smoke_test.sh
+```
+
+Runs a cheap (2-3 simulated day) end-to-end check of all 4 steps for both `fixed_season` and
+`gamma_ac`, reusing existing preprocess directories and writing to `/tmp/atm_smoke_test` (never
+real experiment data). Checks that restart tensors, raw netCDF, pressure-interpolated netCDF, and
+at least one figure PNG all exist and are non-empty. Not a numerical-correctness check — just
+confirms the pipeline didn't crash and produced files.
+
+## Troubleshooting
+
+For issues, questions, or concerns about the model itself, see the
+[original repository](https://github.com/jsb288/Atmospheric-Teleconnection-Model) or contact Ben
+Kirtman at bkirtman@miami.edu. For issues specific to this fork's pipeline or student tools, open
+an issue on [this repository](https://github.com/ou-esplab/Telly).
