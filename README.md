@@ -118,6 +118,25 @@ To **extend** an existing experiment: edit the config YAML, increase `run_length
 `cold_start: false`, and set `toffset` to the number of days already completed, then re-run step 2
 (and steps 3–4 afterward).
 
+### Model output
+
+Every experiment writes to its own subdirectory under `experiment_root/experiment_name/` (whatever
+you set those to, in the UI or the config YAML). Nothing is written inside the repo itself.
+
+| File pattern | Contents | Written by |
+|---|---|---|
+| `{var}_{date_start}_{date_end}.nc` | Daily model output in sigma-level coordinates (one 30-day chunk per file) | Step 2 |
+| `lnps_{date_start}_{date_end}.nc` | Log surface pressure chunks (same 30-day cadence) | Step 2 |
+| `{var}mn_{date_start}_{date_end}.nc` | 30-day mean fields | Step 2 |
+| `{name}.spectral.pt` | Restart spectral-coefficient tensors (`zmn1`, `zmn2`, etc.), overwritten at the end of every run so they always reflect the most recent segment | Step 2 |
+| `{var}_Pressure_days_1-{N}.nc` | Variables interpolated to pressure levels (850/500/300/200 hPa by default) | Step 3 |
+| `sealevelpressure_days_1-{N}.nc` | Sea-level pressure, if `compute_slp: true` | Step 3 |
+| `figures/{var}{level}_{mean\|diff}.png` | Time-mean maps and anomaly maps vs. the control experiment | Step 4 |
+
+Which variables get postprocessed/plotted (`postprocess_vars`/`plot_levels_hpa` in the config, or
+the matching fields in the UI) determines which of these actually appear — a run only ever
+produces files for the variables and levels you asked for.
+
 ### Repository layout
 
 ```
