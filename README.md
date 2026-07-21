@@ -3,8 +3,8 @@
 This repository is the OU ESPLab fork of the Atmospheric Teleconnection Model (ATM), a
 simplified-physics atmospheric general circulation model for idealized climate dynamics studies.
 It tracks the upstream model but adds a config-driven pipeline and a form-based Jupyter UI
-(`student_tools/Configure_and_Run_Experiment.ipynb`) aimed at students running experiments without
-hand-editing notebooks or YAML.
+(`tools/Configure_and_Run_Experiment.ipynb`) for running experiments without hand-editing notebooks
+or YAML.
 
 - **Original model repository**: https://github.com/jsb288/Atmospheric-Teleconnection-Model
 - **Model paper**: Kirtman, B. P., and Coauthors, 2025: A Simplified-Physics Atmosphere General
@@ -58,8 +58,8 @@ pip3 install torch-harmonics==0.6.3
 
 ### 3. Run an experiment using the UI
 
-Most users — especially students — should use
-[`student_tools/Configure_and_Run_Experiment.ipynb`](student_tools/Configure_and_Run_Experiment.ipynb)
+Most users should use
+[`tools/Configure_and_Run_Experiment.ipynb`](tools/Configure_and_Run_Experiment.ipynb)
 instead of running scripts by hand. Open it in JupyterLab from anywhere inside the repo (it locates
 the project root automatically) and it wraps the whole workflow in a single form UI.
 
@@ -143,7 +143,7 @@ produces files for the variables and levels you asked for.
 scripts/                    ← 4-step pipeline (01_preprocess.py … 04_plot_results.py),
                                plus generate_heating.py / generate_shape_scale.py helpers
                                and smoke_test.sh
-student_tools/               ← Jupyter/ipywidgets UI (Configure_and_Run_Experiment.ipynb)
+tools/                        ← Jupyter/ipywidgets UI (Configure_and_Run_Experiment.ipynb)
 config/
 ├── defaults.yaml            ← values shared by every experiment config
 ├── examples/                ← documented YAML templates
@@ -174,5 +174,5 @@ confirms the pipeline didn't crash and produced files.
 
 For issues, questions, or concerns about the model itself, see the
 [original repository](https://github.com/jsb288/Atmospheric-Teleconnection-Model) or contact Ben
-Kirtman at bkirtman@miami.edu. For issues specific to this fork's pipeline or student tools, open
-an issue on [this repository](https://github.com/ou-esplab/Telly).
+Kirtman at bkirtman@miami.edu. For issues specific to this fork's pipeline or tools, open an issue
+on [this repository](https://github.com/ou-esplab/Telly).

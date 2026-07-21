@@ -1,5 +1,5 @@
 """
-UI (widgets, config-building, pipeline-running) for the student-facing
+UI (widgets, config-building, pipeline-running) for the
 Configure & Run Experiment notebook. Lives here rather than inline in the
 notebook cell so it's editable with normal tools (real diffs, not notebook
 JSON surgery) and easier to debug (a traceback points at a real file/line).
@@ -100,7 +100,7 @@ def build_and_display_ui(project_root):
         preprocess_path="/data/esplab/kpegion/projects/AGCM/AnnualCycle",
     )
     # Instructor's own experiment_root (config/defaults.yaml) -- shown as a
-    # concrete, working suggestion. Students don't have write access there, so
+    # concrete, working suggestion. You won't have write access there, so
     # leaving it as-is just fails with a permission error; change it to your own.
     SUGGESTED_EXPERIMENT_ROOT = "/data/esplab/kpegion/projects/AGCM_Experiments"
 

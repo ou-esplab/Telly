@@ -25,7 +25,7 @@ Atmospheric-Teleconnection-Model-main/   ← code lives here
 │   │                               (e.g. El Nino) fits — ported from a notebook, see below
 │   └── smoke_test.sh            ← cheap end-to-end pipeline check, see "Smoke Test" below
 │
-├── student_tools/               ← Jupyter/ipywidgets UI, see "Student Tools" below
+├── tools/                        ← Jupyter/ipywidgets UI, see "Tools" below
 │   └── Configure_and_Run_Experiment.ipynb
 │
 ├── config/
@@ -173,9 +173,9 @@ days already completed, then re-run step 2 (and steps 3–4 afterward).
 
 ---
 
-## Student Tools
+## Tools
 
-`student_tools/Configure_and_Run_Experiment.ipynb` (needs `jupyterlab`/
+`tools/Configure_and_Run_Experiment.ipynb` (needs `jupyterlab`/
 `ipywidgets`, both in `Environments/agcm_environment.yml`) wraps the whole
 command-line workflow above — generating input files *and* running the
 pipeline — in a single form UI. No hand-editing YAML or the command line
