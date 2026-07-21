@@ -40,6 +40,9 @@ import hashlib
 import os
 import sys
 
+import matplotlib
+matplotlib.use("Agg")  # no display available in this notebook/CLI context
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
@@ -135,9 +138,79 @@ def _load_or_build_regridded_precip(precip_glob, precip_varname, zw, lats, lons,
     return drain_full["precip"]
 
 
+def _save_diagnostic_plot(output_dir, name, lats, lons, shape_daily, scale_daily,
+                           mean_final=None, mean_baseline=None):
+    """
+    Reference-notebook-style sanity-check figure -- plain pcolormesh/line plots
+    (no cartopy; the reference notebook's actual shape/scale diagnostics never
+    use it, only its unrelated intro rainfall map does), matching
+    Gamma_AC_Model/reference_notebooks/preprocess.Gamma_heating.ipynb's cells:
+      - 16/23: single-day spatial maps of the final shape/scale fields.
+      - 14/20/34/37: annual-cycle line plot at one grid point.
+      - 27: composite-vs-control zonal-mean difference (only when mean_final/
+        mean_baseline are both given, i.e. a composite fit, not a plain control).
+    """
+    shape_np = shape_daily.numpy() if hasattr(shape_daily, "numpy") else np.asarray(shape_daily)
+    scale_np = scale_daily.numpy() if hasattr(scale_daily, "numpy") else np.asarray(scale_daily)
+    jmax, imax = shape_np.shape[1], shape_np.shape[2]
+    # Closest actual latitude to the equator -- not just the middle grid
+    # index, which only happens to land near-equatorial for some grids/
+    # resolutions and isn't guaranteed to for others.
+    j0 = int(np.argmin(np.abs(np.asarray(lats))))
+    i0 = imax // 2
+    day_scale = min(180, scale_np.shape[0] - 1)
+    has_composite = mean_final is not None and mean_baseline is not None
+
+    fig, axes = plt.subplots(2, 2, figsize=(11, 8))
+    axes = axes.ravel()
+
+    im0 = axes[0].pcolormesh(lons, lats, shape_np[0], cmap="Reds")
+    axes[0].set_title("shape, day 0")
+    fig.colorbar(im0, ax=axes[0])
+
+    im1 = axes[1].pcolormesh(lons, lats, scale_np[day_scale], cmap="Greens")
+    axes[1].set_title(f"scale, day {day_scale}")
+    fig.colorbar(im1, ax=axes[1])
+
+    axes[2].plot(shape_np[:, j0, i0], label="shape")
+    axes[2].plot(scale_np[:, j0, i0], label="scale")
+    axes[2].set_title(f"annual cycle at lat={lats[j0]:.1f}, lon={lons[i0]:.1f}")
+    axes[2].set_xlabel("day of year")
+    axes[2].legend()
+
+    if has_composite:
+        # zonal mean (longitude-averaged) still leaves (dayofyear, lat) --
+        # a Hovmoller-style image, not a single line, matching how xarray's
+        # own .plot() would auto-render this same 2-D quantity (the
+        # reference notebook's cell 27 relied on that auto-dispatch; a plain
+        # matplotlib .plot() on the raw 2-D array instead draws one line per
+        # latitude, which is unreadable).
+        diff = (mean_final - mean_baseline).mean(dim="lon")
+        diff_np = diff.values if hasattr(diff, "values") else np.asarray(diff)
+        doy = np.arange(diff_np.shape[0])
+        # diff_np is already (dayofyear, lat) -- pcolormesh(x, y, data) wants
+        # data shaped (len(y), len(x)), so no transpose needed to put day of
+        # year on the y-axis and lat on the x-axis.
+        im3 = axes[3].pcolormesh(lats, doy, diff_np, cmap="BrBG", shading="auto")
+        axes[3].set_title("composite minus control (zonal-mean precip)")
+        axes[3].set_xlabel("lat")
+        axes[3].set_ylabel("day of year")
+        fig.colorbar(im3, ax=axes[3])
+    else:
+        axes[3].axis("off")
+
+    fig.suptitle(f"Shape/scale diagnostics: {name}")
+    fig.tight_layout()
+    diagnostic_path = os.path.join(output_dir, f"diagnostic_{name}.png")
+    fig.savefig(diagnostic_path, dpi=100)
+    plt.close(fig)
+    print(f"  Saved {diagnostic_path}")
+    return diagnostic_path
+
+
 def fit_gamma_shape_scale(precip_glob, precip_varname, date_range, zw, output_dir, name,
                            composite_windows=None, scale_qc_max=None, dummy_leap_year=1952,
-                           precip_cache_dir=None):
+                           precip_cache_dir=None, make_diagnostic_plot=True):
     """
     Fit gamma-distribution shape/scale parameters to daily precipitation.
 
@@ -169,6 +242,10 @@ def fit_gamma_shape_scale(precip_glob, precip_varname, date_range, zw, output_di
                         skip the slow open_mfdataset+regrid step entirely.
                         None (default) disables caching -- always reloads from
                         scratch, matching this function's original behavior.
+    make_diagnostic_plot: if True (default), also save a reference-notebook-style
+                        sanity-check figure to output_dir/diagnostic_{name}.png
+                        (shape/scale maps, an annual-cycle line plot, and for a
+                        composite fit, a composite-vs-control comparison).
 
     Returns (shape_tensor, scale_tensor), each shape (365, jmax, imax),
     dtype float64. Also written to output_dir as shape_{name}.pt / scale_{name}.pt.
@@ -250,10 +327,17 @@ def fit_gamma_shape_scale(precip_glob, precip_varname, date_range, zw, output_di
     print(f"  Saved {shape_path}")
     print(f"  Saved {scale_path}")
 
+    if make_diagnostic_plot:
+        _save_diagnostic_plot(
+            output_dir, name, lats, lons, shape_daily, scale_daily,
+            mean_final=mean_final if composite_windows else None,
+            mean_baseline=mean if composite_windows else None,
+        )
+
     return shape_daily, scale_daily
 
 
-def zero_shape_scale(output_dir, name, zw):
+def zero_shape_scale(output_dir, name, zw, make_diagnostic_plot=True):
     """
     Explicit all-zero shape/scale pair (a shape of 0 disables the gamma
     heating draw entirely — the "no heating" case). Written explicitly
@@ -262,6 +346,7 @@ def zero_shape_scale(output_dir, name, zw):
     accident).
     """
     mw, jmax, imax = build_grid_params({"zw": zw})
+    lats, lons, _ = _build_grid(jmax, imax)
     z = torch.zeros((365, jmax, imax), dtype=torch.float64)
     os.makedirs(output_dir, exist_ok=True)
     shape_path = os.path.join(output_dir, f"shape_{name}.pt")
@@ -270,6 +355,8 @@ def zero_shape_scale(output_dir, name, zw):
     torch.save(z.clone(), scale_path)
     print(f"  Saved {shape_path}")
     print(f"  Saved {scale_path}")
+    if make_diagnostic_plot:
+        _save_diagnostic_plot(output_dir, name, lats, lons, z, z)
     return z, z
 
 
@@ -298,10 +385,14 @@ def main():
                          help="Cache the regridded precip_glob match here, keyed by "
                               "precip-glob/precip-varname/zw, so later runs with a different "
                               "date range or composite skip the slow reload+regrid")
+    parser.add_argument("--no-diagnostic-plot", action="store_true",
+                         help="Skip saving the reference-notebook-style sanity-check PNG "
+                              "(diagnostic_{name}.png) alongside the shape/scale .pt files")
     args = parser.parse_args()
 
     if args.noheating:
-        zero_shape_scale(args.output_dir, args.name, args.zw)
+        zero_shape_scale(args.output_dir, args.name, args.zw,
+                          make_diagnostic_plot=not args.no_diagnostic_plot)
         return
 
     if not (args.precip_glob and args.start_date and args.end_date):
@@ -317,6 +408,7 @@ def main():
         composite_windows=args.composite_window or None,
         scale_qc_max=args.scale_qc_max,
         precip_cache_dir=args.precip_cache_dir,
+        make_diagnostic_plot=not args.no_diagnostic_plot,
     )
 
 

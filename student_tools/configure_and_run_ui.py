@@ -8,7 +8,9 @@ JSON surgery) and easier to debug (a traceback points at a real file/line).
 import datetime
 import glob
 import re
+import shlex
 import subprocess
+import time
 import ipywidgets as w
 import yaml
 
@@ -17,7 +19,25 @@ from generate_shape_scale import fit_gamma_shape_scale, zero_shape_scale
 import os
 import sys
 
-from IPython.display import display
+from IPython.display import display, Image
+
+_DUPLICATE_CLICK_WINDOW_S = 3.0
+
+
+def _is_duplicate_click(last_click_state):
+    # Guards a Generate button against a burst of rapid clicks -- ipywidgets
+    # processes queued click messages one at a time, each running to full
+    # completion (including resetting button.disabled back to False in a
+    # finally block) before the next queued click is even dispatched. So a
+    # second click sent before the button's disabled state has visually
+    # rendered in the browser isn't blocked by disabling the button -- by
+    # the time it actually runs, the first click has already finished and
+    # re-enabled it. This time-based check catches that case regardless.
+    now = time.time()
+    if now - last_click_state[0] < _DUPLICATE_CLICK_WINDOW_S:
+        return True
+    last_click_state[0] = now
+    return False
 
 
 
@@ -487,6 +507,9 @@ def build_and_display_ui(project_root):
 
     run_output = w.Output()
     run_button = w.Button(description="Run Pipeline (steps 1-4)", button_style="primary")
+    r_use_screen = w.Checkbox(
+        value=False, description="Run in background (screen)",
+        style=_LABEL_STYLE)
     confirm_box = w.VBox([])  # populated with a confirmation button when needed
 
 
@@ -630,7 +653,11 @@ def build_and_display_ui(project_root):
             kwargs["anomaly_years"] = years
 
 
+    _heating_click_state = [0.0]
+
     def on_generate_heating_clicked(b):
+        if _is_duplicate_click(_heating_click_state):
+            return
         with heating_gen_output:
             heating_gen_output.clear_output()
             print("Generating... this can take a few minutes for cmap/cmorph sources "
@@ -680,7 +707,11 @@ def build_and_display_ui(project_root):
     heating_gen_button.on_click(on_generate_heating_clicked)
 
 
+    _ss_click_state = [0.0]
+
     def on_generate_ss_clicked(b):
+        if _is_duplicate_click(_ss_click_state):
+            return
         with ss_gen_output:
             ss_gen_output.clear_output()
             print("Generating... on a cache miss, fitting reads the full precip archive "
@@ -708,6 +739,8 @@ def build_and_display_ui(project_root):
                         if not years:
                             raise ValueError("Add at least one composite year, or switch to 'Fit new: Control period'.")
                         windows = _composite_windows_from_years(years)
+                        for yr, (w0, w1) in zip(years, windows):
+                            print(f"  Composite year {yr} -> {w0} to {w1}")
                     fit_gamma_shape_scale(
                         precip_glob=ss_precip_glob.value,
                         precip_varname=ss_precip_varname.value,
@@ -723,6 +756,9 @@ def build_and_display_ui(project_root):
                 r_scale_file.value = f"scale_{r_heating_name.value}.pt"
                 print(f"Done. Wrote shape_{r_heating_name.value}.pt / scale_{r_heating_name.value}.pt "
                       f"to {r_preprocess_path.value}")
+                diagnostic_path = os.path.join(r_preprocess_path.value, f"diagnostic_{r_heating_name.value}.png")
+                if os.path.exists(diagnostic_path):
+                    display(Image(filename=diagnostic_path))
             except Exception as e:
                 print(f"ERROR: {e}")
             finally:
@@ -850,12 +886,16 @@ def build_and_display_ui(project_root):
             # heat.ggrid_{heating_name}.pt for gamma_ac is a diagnostic artifact
             # only (never loaded by RunModel.Gamma.py) and is never required for
             # preprocess completeness, so this only matters if a full (non
-            # --heating-only) preprocess ever has to run from scratch.
+            # --heating-only) preprocess ever has to run from scratch. Keys are
+            # named diagnostic_heating_* (not heating_source/heating_file, which
+            # mean the REAL heating for fixed_season) so a saved config can't be
+            # misread as describing this run's actual heating mechanism -- for
+            # gamma_ac that's entirely shape_file_override/scale_file_override.
             if a_gamma_heating_custom_file.value:
-                cfg["heating_source"] = "custom"
-                cfg["heating_file"] = a_gamma_heating_custom_file.value
+                cfg["diagnostic_heating_source"] = "custom"
+                cfg["diagnostic_heating_file"] = a_gamma_heating_custom_file.value
             else:
-                cfg["heating_source"] = "cmap_default"
+                cfg["diagnostic_heating_source"] = "cmap_default"
         return cfg
 
 
@@ -922,6 +962,42 @@ def build_and_display_ui(project_root):
             print("Pipeline complete.")
 
 
+    def _run_pipeline_screen():
+        # Same 4 steps, same stop-at-first-failure behavior as _run_pipeline,
+        # but launched detached via `screen` so a long run (e.g. gamma_ac's
+        # real 150-year control) survives kernel/notebook disconnection
+        # instead of blocking it for the run's entire duration.
+        with run_output:
+            run_output.clear_output()
+            path = config_path()
+            if not os.path.exists(path):
+                print("ERROR: build the config first.")
+                return
+            session_name = f"atm_{r_experiment_name.value}"
+            log_path = os.path.abspath(f"{r_experiment_name.value}_pipeline.log")
+            steps = ["01_preprocess.py", "02_run_model.py", "03_postprocess.py", "04_plot_results.py"]
+            step_cmds = [
+                f"{shlex.quote(sys.executable)} "
+                f"{shlex.quote(os.path.join(project_root, 'scripts', step))} "
+                f"--config {shlex.quote(os.path.abspath(path))}"
+                for step in steps
+            ]
+            shell_line = f"({' && '.join(step_cmds)}) > {shlex.quote(log_path)} 2>&1"
+            screen_cmd = ["screen", "-dmS", session_name, "bash", "-c", shell_line]
+            try:
+                subprocess.run(screen_cmd, cwd=os.path.join(project_root, "scripts"), check=True)
+            except (subprocess.CalledProcessError, FileNotFoundError) as e:
+                print(f"ERROR: failed to launch screen session: {e}")
+                return
+            print(f"Submitted to screen session '{session_name}' -- steps 1-4 run in the "
+                  "background, stopping at the first failure (same behavior as the normal "
+                  "Run Pipeline). This notebook is free to use for other things in the meantime.")
+            print(f"  Check progress:  screen -r {session_name}")
+            print(f"  View the log:    tail -f {log_path}")
+            print("  (detach from an attached screen session with Ctrl-A then D -- "
+                  "does not stop the run)")
+
+
     def on_run_clicked(b):
         with run_output:
             run_output.clear_output()
@@ -932,20 +1008,21 @@ def build_and_display_ui(project_root):
                     print(" -", msg)
                 print("Nothing has been run.")
                 return
+        run = _run_pipeline_screen if r_use_screen.value else _run_pipeline
         target = experiment_dir()
         if r_cold_start.value and os.path.isdir(target):
             confirm_btn = w.Button(description=f"Confirm: delete and restart {target}", button_style="danger")
 
             def on_confirm(cb):
                 confirm_box.children = ()
-                _run_pipeline()
+                run()
 
             confirm_btn.on_click(on_confirm)
             confirm_box.children = (confirm_btn,)
             with run_output:
                 print(f"cold_start=True and {target} already exists — click above to confirm overwrite.")
         else:
-            _run_pipeline()
+            run()
 
 
     run_button.on_click(on_run_clicked)
@@ -959,7 +1036,7 @@ def build_and_display_ui(project_root):
         postprocessing_box,
         advanced_box,
         build_config_button, config_output,
-        run_button, confirm_box, run_output,
+        r_use_screen, run_button, confirm_box, run_output,
     ])
 
     display(run_panel)

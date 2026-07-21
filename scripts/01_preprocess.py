@@ -521,17 +521,22 @@ def gamma_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig, kmax, jmax,
     The model's actual heating is entirely the stochastic gamma-distribution
     draw computed in latent_heat_release() from shapeAC.pt/scaleAC.pt (or
     shape_noheating.pt/scale_noheating.pt), independent of this file.
+
+    Reads cfg["diagnostic_heating_source"]/cfg["diagnostic_heating_file"] --
+    deliberately separate key names from fixed_season's heating_source/
+    heating_file (which control the model's REAL, load-bearing heating) so a
+    saved config can't be misread as describing the real heating mechanism.
     """
-    print(f"  Processing background heating (Gamma_AC, source={cfg['heating_source']})...")
+    print(f"  Processing background heating (Gamma_AC, source={cfg['diagnostic_heating_source']})...")
     heating_name = cfg["heating_name"]
     outfile      = os.path.join(fullpath, f"heat.ggrid_{heating_name}.pt")
 
-    source = cfg["heating_source"].lower()
+    source = cfg["diagnostic_heating_source"].lower()
 
     if source == "custom":
-        src = cfg.get("heating_file")
+        src = cfg.get("diagnostic_heating_file")
         if not src:
-            raise ValueError("heating_source=custom but no heating_file specified.")
+            raise ValueError("diagnostic_heating_source=custom but no diagnostic_heating_file specified.")
         import shutil; shutil.copy(src, outfile)
         print(f"    Copied custom heating → {outfile}")
         return
