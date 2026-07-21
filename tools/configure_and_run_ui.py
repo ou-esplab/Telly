@@ -902,7 +902,9 @@ def build_and_display_ui(project_root):
     def config_path():
         # Experiment name drives the saved config filename directly, so there's
         # no separate "Save config to" field that can drift out of sync with it.
-        return f"{r_experiment_name.value}.yaml"
+        # Written into config/experiments/ alongside the curated experiment
+        # configs, per that directory's own convention (one YAML per experiment).
+        return os.path.join(project_root, "config", "experiments", f"{r_experiment_name.value}.yaml")
 
 
     def on_build_config_clicked(b):
@@ -974,7 +976,7 @@ def build_and_display_ui(project_root):
                 print("ERROR: build the config first.")
                 return
             session_name = f"atm_{r_experiment_name.value}"
-            log_path = os.path.abspath(f"{r_experiment_name.value}_pipeline.log")
+            log_path = os.path.join(project_root, "config", "experiments", f"{r_experiment_name.value}_pipeline.log")
             steps = ["01_preprocess.py", "02_run_model.py", "03_postprocess.py", "04_plot_results.py"]
             step_cmds = [
                 f"{shlex.quote(sys.executable)} "
