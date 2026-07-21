@@ -28,6 +28,7 @@ Note (Gamma_AC only):
 """
 
 import argparse
+import datetime
 import os
 import sys
 import warnings
@@ -125,6 +126,40 @@ def mt_preprocess_surface_pressure(cfg, dlatlon, dsht, imax, fullpath):
     return coeffs
 
 
+def _recipe_path(pt_path):
+    return os.path.splitext(pt_path)[0] + ".config.yaml"
+
+
+def _write_heating_recipe(cfg, source, outfile, fullpath):
+    # A minimal, self-sufficient record of what produced this heating file --
+    # exactly the cfg keys that determine it, reusable as a --config input to
+    # regenerate the same file. Written next to the .pt so it travels with
+    # the file if it's later copied/renamed (see the "custom" branch below).
+    recipe = {
+        # mt_preprocess_heating is fixed_season-only, so this is a constant --
+        # included so the recipe is a standalone, runnable --heating-only
+        # --config on its own (main() requires model_type to be present).
+        "model_type": "fixed_season",
+        "heating_source": source,
+        "heating_name": cfg["heating_name"],
+        "season": cfg["season"],
+        "start_year": cfg["start_year"],
+        "end_year": cfg["end_year"],
+        "input_data_path": cfg["input_data_path"],
+        "preprocess_path_override": fullpath,
+        "zw": cfg.get("zw"),
+        "kmax": cfg.get("kmax"),
+    }
+    for key in ("cesm2_precip_file", "cca_precip_file", "cmap_precip_file",
+                "cmorph_precip_glob", "anomaly_type", "anomaly_years",
+                "anomaly_lat_min", "anomaly_lat_max", "anomaly_lon_min", "anomaly_lon_max"):
+        if cfg.get(key) is not None:
+            recipe[key] = cfg[key]
+    recipe["generated_at"] = datetime.datetime.now().isoformat(timespec="seconds")
+    with open(_recipe_path(outfile), "w") as f:
+        yaml.safe_dump(recipe, f, sort_keys=False)
+
+
 def mt_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig, kmax, jmax, imax, fullpath):
     """
     FixedSeason prescribed heating. Two independent paths:
@@ -162,6 +197,10 @@ def mt_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig, kmax, jmax, im
             raise ValueError("heating_source=custom but no heating_file specified.")
         import shutil; shutil.copy(src, outfile)
         print(f"    Copied custom heating → {outfile}")
+        src_recipe = _recipe_path(src)
+        if os.path.exists(src_recipe):
+            shutil.copy(src_recipe, _recipe_path(outfile))
+            print(f"    Copied source's heating recipe → {_recipe_path(outfile)}")
         return
 
     # ------------------------------------------------------------------
@@ -307,6 +346,8 @@ def mt_preprocess_heating(cfg, dlatlon, dsht, disht, Lat, delsig, kmax, jmax, im
 
     torch.save(heat, outfile)
     print(f"    Saved {os.path.basename(outfile)}")
+    _write_heating_recipe(cfg, source, outfile, fullpath)
+    print(f"    Saved {os.path.basename(_recipe_path(outfile))}")
 
 
 def mt_preprocess_winds(cfg, dlatlon, vsht, dsht, disht, divsht,

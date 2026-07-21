@@ -309,6 +309,22 @@ def main():
             os.makedirs(datapath)
         print(f"Restart: using experiment directory: {datapath}")
 
+    # Copy the heating recipe (what climatology/anomaly/modifications produced
+    # it -- see 01_preprocess.py's mt_preprocess_heating) into the run's own
+    # output dir, so it's self-contained even if the shared preprocess dir is
+    # later cleaned up or the heating file gets reused/renamed elsewhere.
+    # gamma_ac's heat.ggrid file is diagnostic-only, so this is fixed_season-only.
+    if cfg["model_type"] == "fixed_season":
+        heating_filename = cfg.get("heating_file_override") or f"heat.ggrid_{cfg['heating_name']}.pt"
+        recipe_src = os.path.join(preprocess_path, os.path.splitext(heating_filename)[0] + ".config.yaml")
+        if os.path.exists(recipe_src):
+            import shutil
+            shutil.copy(recipe_src, os.path.join(datapath, os.path.basename(recipe_src)))
+            print(f"  Copied heating recipe: {os.path.basename(recipe_src)}")
+        else:
+            print(f"  No heating recipe found for {heating_filename} (predates recipe "
+                  "tracking, or was hand-placed) -- run's output won't include one.")
+
     # Add the right model directory to sys.path
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     model_type   = cfg["model_type"]

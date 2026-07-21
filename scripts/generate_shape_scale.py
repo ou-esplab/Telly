@@ -36,6 +36,7 @@ Also importable directly:
 """
 
 import argparse
+import hashlib
 import os
 import sys
 
@@ -96,8 +97,47 @@ def _derive_shift(composite_windows, dummy_leap_year):
     return pd.Timestamp(year=dummy_leap_year, month=month, day=day).dayofyear - 1
 
 
+def _regrid_cache_path(cache_dir, precip_glob, precip_varname, zw):
+    glob_hash = hashlib.sha1(precip_glob.encode()).hexdigest()[:10]
+    return os.path.join(cache_dir, f"regridded_{precip_varname}_zw{zw}_{glob_hash}.nc")
+
+
+def _load_or_build_regridded_precip(precip_glob, precip_varname, zw, lats, lons, dlatlon, cache_dir):
+    # The expensive step (opening + regridding the whole precip_glob match)
+    # doesn't depend on date_range at all -- fit_gamma_shape_scale only slices
+    # to date_range afterward -- so caching it here speeds up every future
+    # date range or composite-year choice, not just exact repeats.
+    cache_path = _regrid_cache_path(cache_dir, precip_glob, precip_varname, zw) if cache_dir else None
+    if cache_path and os.path.exists(cache_path):
+        print(f"  Using cached regridded precip: {cache_path}")
+        return xr.open_dataset(cache_path)["precip"]
+
+    print("  No cache hit -- loading + regridding the full precip archive "
+          "(this can take several minutes; cached afterward for any date range)...")
+    precip_ds = xr.open_mfdataset(precip_glob, autoclose=True)
+    precip_da = precip_ds[precip_varname]
+    precip_vals = np.where(np.isnan(precip_da.values), 0.0, precip_da.values)
+    precip_da = precip_da.copy(data=precip_vals)
+
+    regridder = xe.Regridder(precip_da, dlatlon, "bilinear")
+    precip_gg = regridder(precip_da)
+
+    drain_full = xr.Dataset(
+        {"precip": (["time", "lat", "lon"], precip_gg.values)},
+        coords={"time": precip_da["time"], "lat": lats, "lon": lons},
+    )
+
+    if cache_path:
+        os.makedirs(cache_dir, exist_ok=True)
+        drain_full.to_netcdf(cache_path)
+        print(f"  Cached regridded precip → {cache_path}")
+
+    return drain_full["precip"]
+
+
 def fit_gamma_shape_scale(precip_glob, precip_varname, date_range, zw, output_dir, name,
-                           composite_windows=None, scale_qc_max=None, dummy_leap_year=1952):
+                           composite_windows=None, scale_qc_max=None, dummy_leap_year=1952,
+                           precip_cache_dir=None):
     """
     Fit gamma-distribution shape/scale parameters to daily precipitation.
 
@@ -123,6 +163,12 @@ def fit_gamma_shape_scale(precip_glob, precip_varname, date_range, zw, output_di
                         None = no clipping.
     dummy_leap_year  : reference calendar year for the internal triple-year
                         cubic-upsample trick; must be a leap year.
+    precip_cache_dir : directory to cache the regridded full precip_glob match
+                        in (keyed by precip_glob/precip_varname/zw), so a later
+                        call with a different date_range/composite_windows can
+                        skip the slow open_mfdataset+regrid step entirely.
+                        None (default) disables caching -- always reloads from
+                        scratch, matching this function's original behavior.
 
     Returns (shape_tensor, scale_tensor), each shape (365, jmax, imax),
     dtype float64. Also written to output_dir as shape_{name}.pt / scale_{name}.pt.
@@ -130,19 +176,9 @@ def fit_gamma_shape_scale(precip_glob, precip_varname, date_range, zw, output_di
     mw, jmax, imax = build_grid_params({"zw": zw})
     lats, lons, dlatlon = _build_grid(jmax, imax)
 
-    precip_ds = xr.open_mfdataset(precip_glob, autoclose=True)
-    precip_da = precip_ds[precip_varname]
-    precip_vals = np.where(np.isnan(precip_da.values), 0.0, precip_da.values)
-    precip_da = precip_da.copy(data=precip_vals)
-
-    regridder = xe.Regridder(precip_da, dlatlon, "bilinear")
-    precip_gg = regridder(precip_da)
-
-    drain = xr.Dataset(
-        {"precip": (["time", "lat", "lon"], precip_gg.values)},
-        coords={"time": precip_da["time"], "lat": lats, "lon": lons},
-    )
-    drain = drain.sel(time=slice(date_range[0], date_range[1]))
+    precip = _load_or_build_regridded_precip(
+        precip_glob, precip_varname, zw, lats, lons, dlatlon, precip_cache_dir)
+    drain = xr.Dataset({"precip": precip}).sel(time=slice(date_range[0], date_range[1]))
 
     mean = drain.precip.groupby("time.dayofyear").mean(dim="time")
     anom = drain.precip.groupby("time.dayofyear") - mean
@@ -258,6 +294,10 @@ def main():
     parser.add_argument("--name", required=True, help="Output filename label")
     parser.add_argument("--noheating", action="store_true",
                          help="Write an explicit all-zero shape/scale pair instead of fitting")
+    parser.add_argument("--precip-cache-dir", default=None,
+                         help="Cache the regridded precip_glob match here, keyed by "
+                              "precip-glob/precip-varname/zw, so later runs with a different "
+                              "date range or composite skip the slow reload+regrid")
     args = parser.parse_args()
 
     if args.noheating:
@@ -276,6 +316,7 @@ def main():
         name=args.name,
         composite_windows=args.composite_window or None,
         scale_qc_max=args.scale_qc_max,
+        precip_cache_dir=args.precip_cache_dir,
     )
 
 
