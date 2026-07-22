@@ -4,7 +4,10 @@
 # In[1]:
 
 
+import glob
+import os
 import platform
+import re
 import subprocess
 import argparse
 
@@ -27,7 +30,7 @@ import xarray
 # Parse commend line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("--expname",nargs='?',default=None,help="experiment name")
-parser.add_argument("--dayst",nargs='?',default=None,help="number of days to postprocess")
+parser.add_argument("--dayst",nargs='?',default=None,help="unused -- kept for CLI back-compat; postprocessing is now driven entirely by which raw chunk files exist on disk")
 parser.add_argument("--datapath",nargs='?',default=None,help="experiment output directory (default: derived from expname under the platform-specific AGCM_Experiments path)")
 parser.add_argument("--zw",nargs='?',type=int,default=63,help="zonal wavenumber")
 parser.add_argument("--kmax",nargs='?',type=int,default=26,help="number of vertical levels")
@@ -127,66 +130,81 @@ match user_platform:
 if not datapath.endswith('/'):
     datapath = datapath + '/'
 
-# Set stamp for file names
-stamp = 'days_1-' + str(dayst)
-
-print("datapath =", datapath,
-      "\nstamp =", stamp)
+print("datapath =", datapath)
 
 
 # In[5]:
 
 
-fps = datapath+'lnps_????-??-??_????-??-??.nc' # always need surface pressure
-print(fps)
-dps = xarray.open_mfdataset(fps,decode_times=True,parallel = True)
-#
-#
+# Postprocessing is incremental: for every raw {var}_{start}_{end}.nc chunk
+# file on disk, skip it if a matching {var}_Pressure_{start}_{end}.nc
+# already exists, otherwise interpolate just that chunk. This makes a
+# rerun after extending an experiment (more days added via toffset) only
+# process the new chunks, and needs no "how many days total" figure at all.
+_CHUNK_RE = re.compile(r"^.+_(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})\.nc$")
 
+
+def find_chunks(stub):
+    chunks = []
+    for fpath in glob.glob(datapath + stub + '_????-??-??_????-??-??.nc'):
+        m = _CHUNK_RE.match(os.path.basename(fpath))
+        if m:
+            chunks.append((m.group(1), m.group(2), fpath))
+    return sorted(chunks)
+
+
+plev = [850.0,500.0,300.0,200.0]
+plev_r = np.zeros(len(plev))
+for k in range(len(plev)):
+    plev_r[k] = (plev[k])*100.0 # mb to Pa
 
 for DataSetname,Dataname in zip(DataSetnames,Datanames):
 
-    fdata = datapath+DataSetname+'_????-??-??_????-??-??.nc'
-    ddata = xarray.open_mfdataset(fdata,decode_times=True,parallel = True)
+    chunks = find_chunks(DataSetname)
+    if not chunks:
+        print(f"WARNING: no raw {DataSetname}_*.nc chunks found, skipping.")
+        continue
 
+    for start, end, fdata in chunks:
+        outfile = datapath+DataSetname+'_Pressure_'+start+'_'+end+'.nc'
+        if os.path.exists(outfile):
+            print(f"Skipping {DataSetname} {start}_{end} — already postprocessed.")
+            continue
 
-    print(fps)
-    print(dps)
-    print(ddata)
+        fps = datapath+'lnps_'+start+'_'+end+'.nc'
+        ddata = xarray.open_dataset(fdata, decode_times=True)
+        dps = xarray.open_dataset(fps, decode_times=True)
 
-    
-    #
-    # Create Data Array for Control Pressure level Data geopotenial, temp, u & v
-    # 
-    #
-    lats = ddata['lat'].values
-    lons = ddata['lon'].values
-    plev = [850.0,500.0,300.0,200.0]
-    plev_r = np.zeros(len(plev))
-    for k in range(len(plev)):
-        plev_r[k] = (plev[k])*100.0 # mb to Pa
+        print(ddata)
 
-    tmp = (dayst,len(plev),jmax,imax)
+        #
+        # Create Data Array for Control Pressure level Data geopotenial, temp, u & v
+        #
+        lats = ddata['lat'].values
+        lons = ddata['lon'].values
+        n_days = ddata.sizes['time']
 
-    dout = np.zeros(tmp)
-    pressure = np.zeros((kmax,jmax,imax))
-    siglevs = ddata['lev']
+        dout = np.zeros((n_days,len(plev),jmax,imax))
+        pressure = np.zeros((kmax,jmax,imax))
+        siglevs = ddata['lev'].values
 
-    for k in range (dayst):
-        vv = ddata[Dataname][k,:,:,:]
-        ps = dps.lnps[k,:,:]
-        surfp = (np.exp(ps))*1000.0*100.0 # in Pa
-        for kk in range(kmax):
-            pressure[kk,:,:] = surfp[:,:]*siglevs[kk]
-        vv = vv.compute()
-        ps = ps.compute()
-        dout[k] = metpy.interpolate.log_interpolate_1d(plev_r,pressure,vv, axis=0)
+        print(f"Interpolating {DataSetname} {start}_{end} ({n_days} days)...")
+        for k in range (n_days):
+            vv = ddata[Dataname][k,:,:,:].values
+            ps = dps.lnps[k,:,:].values
+            surfp = (np.exp(ps))*1000.0*100.0 # in Pa
+            for kk in range(kmax):
+                pressure[kk,:,:] = surfp[:,:]*siglevs[kk]
+            dout[k] = metpy.interpolate.log_interpolate_1d(plev_r,pressure,vv, axis=0)
 
-    times = ddata['time']
-    dData = xarray.Dataset({Dataname: (['time','lev','lat','lon'],dout)},
-                            coords={'time': times,'lev':plev, 'lat': lats, 'lon': lons})
+        times = ddata['time']
+        dData = xarray.Dataset({Dataname: (['time','lev','lat','lon'],dout)},
+                                coords={'time': times,'lev':plev, 'lat': lats, 'lon': lons})
+        dData.attrs['source_chunk'] = os.path.basename(fdata)
 
-    print(dout.shape)
-    print(dData)
-    dData.to_netcdf(datapath+DataSetname+'_Pressure_'+stamp+'.nc')
+        print(dout.shape)
+        dData.to_netcdf(outfile)
+        print(f"Saved -> {outfile}")
+        ddata.close()
+        dps.close()
 

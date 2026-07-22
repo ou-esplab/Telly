@@ -53,7 +53,10 @@ VAR_META = {
 
 def load_timemean(expdir, varfile, fieldname, level_hpa, spinup_days):
     """Load pressure-level data and return the time-mean field after spinup."""
-    fpattern = os.path.join(expdir, f"{varfile}_Pressure_days_*.nc")
+    # Matches both the old single-file-per-run naming (*_Pressure_days_1-N.nc)
+    # and the newer incremental per-chunk naming (*_Pressure_{start}_{end}.nc)
+    # -- xr.open_mfdataset combines however many matching files exist.
+    fpattern = os.path.join(expdir, f"{varfile}_Pressure_*.nc")
     ds = xr.open_mfdataset(fpattern, decode_times=True)
     da = ds[fieldname].sel(lev=float(level_hpa)).isel(time=slice(spinup_days, None))
     return da.mean(dim="time").load()
