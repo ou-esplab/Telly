@@ -8,7 +8,6 @@ JSON surgery) and easier to debug (a traceback points at a real file/line).
 import datetime
 import glob
 import re
-import shlex
 import subprocess
 import time
 import ipywidgets as w
@@ -16,6 +15,7 @@ import yaml
 
 from generate_heating import generate_heating_file
 from generate_shape_scale import fit_gamma_shape_scale, zero_shape_scale
+from run_pipeline import run_pipeline_stages
 import os
 import sys
 
@@ -915,62 +915,46 @@ def build_and_display_ui(project_root):
         return problems
 
 
-    def _run_pipeline():
+    def _run_pipeline(force=False):
+        # Chaining logic lives in scripts/run_pipeline.py (shared with its own
+        # CLI) so there's exactly one implementation of "run these stages in
+        # order, stop at the first failure" for both the notebook and the
+        # command line. force=True is only passed once the user has clicked
+        # the cold-start overwrite confirmation button below -- it's what
+        # lets 02_run_model.py's own --force safeguard proceed with deleting
+        # existing output, instead of refusing.
         with run_output:
             run_output.clear_output()
             path = config_path()
             if not os.path.exists(path):
                 print("ERROR: build the config first.")
                 return
-            steps = ["01_preprocess.py", "02_run_model.py", "03_postprocess.py", "04_plot_results.py"]
-            for step in steps:
-                cmd = [sys.executable, os.path.join(project_root, "scripts", step),
-                       "--config", os.path.abspath(path)]
-                print(f"--- Running {step} ---")
-                result = subprocess.run(cmd, cwd=os.path.join(project_root, "scripts"),
-                                         capture_output=True, text=True)
-                print(result.stdout)
-                if result.returncode != 0:
-                    print(result.stderr)
-                    print(f"FAILED at {step} (exit {result.returncode}) — stopping.")
-                    return
-            print("Pipeline complete.")
+            run_pipeline_stages(path, project_root, print_fn=print, force=force)
 
 
-    def _run_pipeline_screen():
-        # Same 4 steps, same stop-at-first-failure behavior as _run_pipeline,
+    def _run_pipeline_screen(force=False):
+        # Same stages, same stop-at-first-failure behavior as _run_pipeline,
         # but launched detached via `screen` so a long run (e.g. gamma_ac's
         # real 150-year control) survives kernel/notebook disconnection
-        # instead of blocking it for the run's entire duration.
+        # instead of blocking it for the run's entire duration. Delegates to
+        # run_pipeline.py's own --screen handling rather than re-building the
+        # screen/shell-chain here.
         with run_output:
             run_output.clear_output()
             path = config_path()
             if not os.path.exists(path):
                 print("ERROR: build the config first.")
                 return
-            session_name = f"atm_{r_experiment_name.value}"
-            log_path = os.path.join(project_root, "config", "experiments", f"{r_experiment_name.value}_pipeline.log")
-            steps = ["01_preprocess.py", "02_run_model.py", "03_postprocess.py", "04_plot_results.py"]
-            step_cmds = [
-                f"{shlex.quote(sys.executable)} "
-                f"{shlex.quote(os.path.join(project_root, 'scripts', step))} "
-                f"--config {shlex.quote(os.path.abspath(path))}"
-                for step in steps
-            ]
-            shell_line = f"({' && '.join(step_cmds)}) > {shlex.quote(log_path)} 2>&1"
-            screen_cmd = ["screen", "-dmS", session_name, "bash", "-c", shell_line]
-            try:
-                subprocess.run(screen_cmd, cwd=os.path.join(project_root, "scripts"), check=True)
-            except (subprocess.CalledProcessError, FileNotFoundError) as e:
-                print(f"ERROR: failed to launch screen session: {e}")
-                return
-            print(f"Submitted to screen session '{session_name}' -- steps 1-4 run in the "
-                  "background, stopping at the first failure (same behavior as the normal "
-                  "Run Pipeline). This notebook is free to use for other things in the meantime.")
-            print(f"  Check progress:  screen -r {session_name}")
-            print(f"  View the log:    tail -f {log_path}")
-            print("  (detach from an attached screen session with Ctrl-A then D -- "
-                  "does not stop the run)")
+            cmd = [sys.executable, os.path.join(project_root, "scripts", "run_pipeline.py"),
+                   "--config", os.path.abspath(path), "--screen"]
+            if force:
+                cmd.append("--force")
+            result = subprocess.run(cmd, cwd=os.path.join(project_root, "scripts"),
+                                     capture_output=True, text=True)
+            print(result.stdout)
+            if result.returncode != 0:
+                print(result.stderr)
+                print("ERROR: failed to launch screen session.")
 
 
     def on_run_clicked(b):
@@ -990,7 +974,7 @@ def build_and_display_ui(project_root):
 
             def on_confirm(cb):
                 confirm_box.children = ()
-                run()
+                run(force=True)
 
             confirm_btn.on_click(on_confirm)
             confirm_box.children = (confirm_btn,)

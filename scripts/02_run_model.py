@@ -12,6 +12,11 @@ Experiment output directory (netCDF + restart .pt files) is created at:
     {experiment_root}/T{zw}L{kmax}_{season}_{heating_name}_{start_year}-{end_year}/
 
 For restarts: set cold_start=false and toffset=<days already run> in the config.
+
+cold_start=true deletes any existing output in the experiment directory before
+starting. If that directory already contains real output (.nc/.pt files), this
+refuses to proceed unless --force is also given -- a wrong/stale cold_start
+value should error, not silently delete a real run.
 """
 
 import argparse
@@ -277,9 +282,20 @@ def run_gamma_ac(cfg, preprocess_path, datapath):
 # Main
 # ---------------------------------------------------------------------------
 
+def _has_real_output(datapath):
+    """True if datapath contains actual model output (.nc/.pt files), as
+    opposed to not existing yet or being empty."""
+    if not os.path.isdir(datapath):
+        return False
+    return any(entry.endswith((".nc", ".pt")) for entry in os.listdir(datapath))
+
+
 def main():
     parser = argparse.ArgumentParser(description="ATM workflow step 2: run model")
     parser.add_argument("--config", required=True, help="Path to YAML config file")
+    parser.add_argument("--force", action="store_true",
+                        help="Confirm deleting an existing experiment directory's output "
+                             "when cold_start=true")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -298,6 +314,13 @@ def main():
     # Create or validate experiment output dir
     cold_start = cfg.get("cold_start", True)
     if cold_start:
+        if _has_real_output(datapath) and not args.force:
+            raise RuntimeError(
+                f"cold_start=true would delete existing output in {datapath} "
+                "(found .nc/.pt files there already). Re-run with --force to confirm "
+                "this is what you want, or set cold_start: false in the config to "
+                "restart/extend the existing run instead."
+            )
         if os.path.isdir(datapath):
             import shutil
             print(f"Cold start: removing existing experiment directory {datapath}")
