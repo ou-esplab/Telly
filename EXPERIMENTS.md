@@ -489,6 +489,32 @@ reading `shape_file_override`/`scale_file_override` from the config).
 python scripts/02_run_model.py --config config/experiments/AC_noheating.yaml
 ```
 
+**Spin-up transient and why short runs look "wrong" next to `AC_Test`**: investigated live
+comparing a fresh 30-day `gamma_ac` test run (`AC_Cntrl`, same `heating_name: Test` and
+`shapeAC.pt`/`scaleAC.pt` as `AC_Test`) against `AC_Test` itself.
+
+- **Cold start produces a real, large, reproducible transient.** Global-mean 850 hPa geopotential
+  drops from ~14134 m² s⁻² on day 1 to ~13603 by day ~26-28 before leveling off — confirmed
+  *identical* (to within noise) in `AC_Test`'s own days 1-30 and in `AC_Cntrl`'s days 1-30, so
+  it's not specific to one config; it's the model adjusting from its prescribed (not dynamically
+  balanced) initial/background state. This is why `spinup_days: 60` exists and why every
+  Gamma_AC config here uses it — a mean that includes these days is not a climatology, it's
+  dominated by the adjustment itself.
+- **Past the transient, two independent runs still diverge — this is expected, not a bug.**
+  Comparing `AC_Cntrl` and `AC_Test`'s own days 61-90 (identical config, same cold start,
+  independent daily stochastic gamma-distributed heating draws) day-by-day: the two track closely
+  through day ~66, then diverge to differences of -80 to -170 m² s⁻² by day ~80 — the same
+  sensitive-dependence-on-forcing behavior that makes real weather unpredictable past 1-2 weeks.
+  Quantified against `AC_Test`'s own post-spinup record: the std of 30-day global-mean-geo850
+  block means across its full 150 years is ~154 m² s⁻² (range ~13443-13972 across 200 blocks) —
+  so a single independent 30-day sample landing 70-170 m² s⁻² away from another is ordinary
+  sampling variability, not evidence of a config or model error.
+- **Practical implication**: a short `gamma_ac` run (tens of days) cannot be expected to match a
+  long climatological run's (like `AC_Test`'s 150 years) mean closely, even with identical
+  parameters and spin-up correctly excluded — only averaging over many more days (or many
+  realizations) will converge toward the same climatology. A large `..._diff.png` between a short
+  test run and `AC_Test` is expected, not necessarily a sign something's wrong.
+
 ---
 
 ## Misc / Test Directories
