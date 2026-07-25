@@ -514,6 +514,19 @@ comparing a fresh 30-day `gamma_ac` test run (`AC_Cntrl`, same `heating_name: Te
   parameters and spin-up correctly excluded — only averaging over many more days (or many
   realizations) will converge toward the same climatology. A large `..._diff.png` between a short
   test run and `AC_Test` is expected, not necessarily a sign something's wrong.
+- **A third, distinct effect: seasonal-averaging-window mismatch (found via `AC_MJO`'s `temp` diff,
+  which looked qualitatively different from the noisier `geo`/`uvel`/`vvel` diffs — clean and
+  hemispherically antisymmetric rather than patchy).** Any short run's post-spinup evaluated days
+  fall within one season (a cold-started run's days 61-90 are still boreal winter, since the
+  simulated calendar starts 1950-01-01), but `AC_Test`'s climatology averages all seasons equally.
+  Confirmed directly using only `AC_Test`'s own data — no other experiment involved: its days 61-90
+  minus its own full all-season climatology gives **NH (30-90N): -7.91 K, SH (30-90S): +3.21 K** at
+  850 hPa `temp` — same sign and comparable magnitude to the `AC_MJO`-vs-`AC_Test` diff. This shows
+  up most clearly in `temp` because its seasonal cycle is large and spatially smooth, unlike
+  `geo`/`uvel`/`vvel`'s noisier synoptic-scale variability, which partially masks the same
+  underlying effect for those variables rather than being free of it. Temporary by construction —
+  once a run reaches multiple full years (like the 5-year `AC_ElNino`/`AC_LaNina` extensions), the
+  averaging spans all seasons and this cancels out on its own; nothing to fix in the meantime.
 
 **`AC_MJO`: composite MJO heating from real events, tiled as a repeating intraseasonal cycle**
 
