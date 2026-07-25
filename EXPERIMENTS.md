@@ -515,6 +515,61 @@ comparing a fresh 30-day `gamma_ac` test run (`AC_Cntrl`, same `heating_name: Te
   realizations) will converge toward the same climatology. A large `..._diff.png` between a short
   test run and `AC_Test` is expected, not necessarily a sign something's wrong.
 
+**`AC_MJO`: composite MJO heating from real events, tiled as a repeating intraseasonal cycle**
+
+Unlike the ENSO composites (`AC_ElNino`/`AC_LaNina`), MJO is a ~30-60 day intraseasonal oscillation,
+not tied to specific years or calendar day-of-year — `generate_shape_scale.py`'s existing
+`composite_windows` mechanism (day-of-year climatology across whole Jul-Jun year windows) doesn't
+apply. Key enabler: `Gamma_AC_Model/RunModel.Gamma.py` indexes `shape[daynumber]`/`scale[daynumber]`
+purely by real calendar day-of-year (0-364), with no other periodicity logic anywhere in the file —
+so a *short, repeating* pattern tiled to fill 365 days cycles through the model automatically, with
+**zero model-code changes**. Only the *generation* logic is new (`fit_gamma_shape_scale_mjo()` and
+`_identify_mjo_onsets()`/`_mjo_phase()` in `scripts/generate_shape_scale.py`).
+
+- **Data**: NOAA PSL's OMI index (`https://psl.noaa.gov/mjo/mjoindex/omi.1x.txt`), stored locally at
+  `/data/esplab/shared/obs/indices/OMI/omi.1x.txt` (not committed — same convention as other
+  observational input data). Whitespace-delimited, no header: `year month day PC1 PC2 amplitude`
+  (amplitude = √(PC1²+PC2²)).
+- **Phase formula, empirically validated, not assumed**: `phase = ((atan2(-PC1, PC2) in degrees) +
+  157.5) // 45 % 8 + 1`. The sign convention (x=PC2, y=-PC1) matches NOAA's stated OMI/RMM
+  relationship; the 157.5° sector-boundary offset (vs. the naive 180°) was found by grid search over
+  sign/offset combinations, maximizing agreement against BOM's independently published RMM phases
+  (`rmm.74toRealtime.txt`) on days both indices call amplitude>1: **92.5% agreement within ±1
+  phase across 5055 overlapping days**, with a clean, symmetric, zero-centered error distribution —
+  not an exact-match optimum fit to noise, and 157.5° (a half-sector shift from the naive guess)
+  matches the physically-sensible convention of sectors being *centered* on cardinal directions
+  rather than bounded by them.
+- **Event onsets**: contiguous runs of `phase == target` & `amplitude > 1.0`; onset = first day of
+  each run. Phase 3 (Indian Ocean-centered convection, the first phase built): 166 onsets across the
+  1991-2026 OMI record (~4.7/year), median 60-day gap between onsets (matches expected MJO
+  recurrence), no evidence of episode fragmentation.
+- **Compositing**: for each onset, a window [onset-5, onset+15) (20 days) of CMORPH precip is
+  extracted and stacked by *lag day* (not day-of-year) across all 127 usable events (1998-2024,
+  CMORPH's available range) — 127 of 166 onsets had a complete window inside that range.
+  Deliberately **skips** `fit_gamma_shape_scale()`'s monthly-resample-then-cubic-upsample smoothing
+  step (built for the ENSO composites' slowly-varying *annual* cycle) — monthly-binning a 20-day
+  cycle would leave ~1 bin per cycle and destroy the very structure being composited. Works at daily
+  lag resolution throughout, method-of-moments fit per lag-day, then tiled (`np.tile`, truncated) to
+  365 days.
+- **Tile-wrap seam**: 365/20 isn't integer, so the last tile is truncated and day 364→day 0 has a
+  discontinuity — checked directly: the wrap jump (~7 units in scale, at a sample tropical point) is
+  *smaller* than the largest ordinary day-to-day jump elsewhere in the same cycle (~47 units), i.e.
+  it blends into the composite's own natural noise level rather than standing out. No special
+  seam-smoothing was needed for this window length.
+- **Validation run**: `AC_MJO` (`config/experiments/AC_MJO.yaml`, `shape_file_override:
+  shape_MJO_Phase3.pt`) run 90 days end-to-end — completed without error, physically plausible
+  absolute fields. Its `..._diff.png` against `AC_Test` shows the same large magnitude as
+  `AC_Cntrl`'s did — expected per the spin-up/short-sample section above (only 30 usable
+  post-spinup days), **not** yet a meaningful estimate of any real MJO-forced teleconnection signal.
+  A multi-year run (matching `AC_ElNino`/`AC_LaNina`'s scale) is needed before this comparison means
+  anything scientifically; deliberately deferred to avoid 3-way resource contention with those two
+  extensions already in progress.
+- **Notebook UI**: `tools/configure_and_run_ui.py`'s shape/scale panel has a "Fit new: MJO
+  composite" mode (phase, min amplitude, lag-before/after, OMI index path fields), calling
+  `fit_gamma_shape_scale_mjo()` the same way the CLI does — verified via a stubbed-exec harness
+  (correct widget visibility per mode, correct call arguments).
+- **Deferred**: the other 7 MJO phases (only phase 3 built/validated so far).
+
 ---
 
 ## Misc / Test Directories

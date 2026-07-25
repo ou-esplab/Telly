@@ -337,6 +337,150 @@ def fit_gamma_shape_scale(precip_glob, precip_varname, date_range, zw, output_di
     return shape_daily, scale_daily
 
 
+def _mjo_phase(pc1, pc2):
+    """
+    MJO phase (1-8) from OMI's two principal components.
+
+    Sign convention (x=PC2, y=-PC1) matches NOAA PSL's stated OMI/RMM
+    relationship ("the sign of OMI PC1 and the PC ordering should be
+    reversed, so that OMI(PC2) is analogous to RMM(PC1) and -OMI(PC1) is
+    analogous to RMM(PC2)" -- https://psl.noaa.gov/mjo/mjoindex/). The 157.5
+    degree sector-boundary offset (rather than the naive 180) was found by
+    grid search over sign/offset combinations, maximizing agreement against
+    BOM's independently published RMM phase numbers (rmm.74toRealtime.txt)
+    on days both indices call amplitude>1: 92.5% agreement within +/-1 phase
+    across 5055 overlapping days, with a clean, symmetric, zero-centered
+    error distribution -- not just an exact-match optimum, so not overfit to
+    noise. See EXPERIMENTS.md's MJO section for the full validation.
+    """
+    angle_deg = np.degrees(np.arctan2(-pc1, pc2))
+    return ((angle_deg + 157.5) // 45 % 8 + 1).astype(int)
+
+
+def _identify_mjo_onsets(omi_index_path, target_phase, amplitude_threshold=1.0):
+    """
+    Parses NOAA PSL's omi.1x.txt (whitespace-delimited, no header: year month
+    day PC1 PC2 amplitude) and returns the onset date (first day) of every
+    contiguous run where phase == target_phase and amplitude > amplitude_threshold.
+    """
+    df = pd.read_csv(omi_index_path, sep=r"\s+",
+                      names=["year", "month", "day", "PC1", "PC2", "amplitude"])
+    df["date"] = pd.to_datetime(df[["year", "month", "day"]])
+    df = df.sort_values("date").reset_index(drop=True)
+    df["phase"] = _mjo_phase(df["PC1"].values, df["PC2"].values)
+
+    active = (df["phase"] == target_phase) & (df["amplitude"] > amplitude_threshold)
+    group_id = (active != active.shift(fill_value=False)).cumsum()
+    onsets = df.loc[active].groupby(group_id[active])["date"].first().tolist()
+    return onsets
+
+
+def fit_gamma_shape_scale_mjo(precip_glob, precip_varname, date_range, zw, output_dir, name,
+                               omi_index_path, target_phase,
+                               lag_days_before=5, lag_days_after=15,
+                               amplitude_threshold=1.0, scale_qc_max=None,
+                               precip_cache_dir=None, make_diagnostic_plot=True):
+    """
+    Fit gamma-distribution shape/scale parameters to a lag-day composite of
+    real MJO events in one phase, then tile the resulting short cycle to fill
+    the full 365-day array RunModel.Gamma.py expects.
+
+    RunModel.Gamma.py indexes shape[daynumber]/scale[daynumber] purely by the
+    real calendar day-of-year (0-364), with no other periodicity logic (see
+    EXPERIMENTS.md's MJO section) -- so a short pattern tiled to 365 days
+    cycles through the model automatically, with no model-code changes.
+
+    Unlike fit_gamma_shape_scale()'s composite_windows path (built for a
+    slowly-varying ANNUAL cycle, hence its monthly-resample-then-cubic-upsample
+    smoothing step), this works at daily lag resolution throughout -- monthly
+    resampling would leave only ~1 bin per MJO cycle and destroy the
+    intraseasonal structure being composited.
+
+    omi_index_path : path to NOAA PSL's omi.1x.txt.
+    target_phase    : MJO phase 1-8 to composite onsets for (see _mjo_phase).
+    lag_days_before/lag_days_after: composite window is
+                      [onset - lag_days_before, onset + lag_days_after), i.e.
+                      lag_days_before + lag_days_after days total. Tunable --
+                      inspect the diagnostic plot's tile-wrap seam before
+                      treating a choice as final.
+    amplitude_threshold: minimum OMI amplitude to count as an "active" MJO day.
+    scale_qc_max     : as in fit_gamma_shape_scale -- likely at least as
+                      relevant here, since the event count compositing a
+                      single phase is probably smaller than the ENSO
+                      composite's whole-year samples.
+
+    Returns (shape_tensor, scale_tensor, usable_onsets). Also written to
+    output_dir as shape_{name}.pt / scale_{name}.pt.
+    """
+    window_len = lag_days_before + lag_days_after
+    if not (0 < window_len <= 365):
+        raise ValueError(f"lag_days_before+lag_days_after must be in (0, 365], got {window_len}")
+
+    mw, jmax, imax = build_grid_params({"zw": zw})
+    lats, lons, dlatlon = _build_grid(jmax, imax)
+
+    precip = _load_or_build_regridded_precip(
+        precip_glob, precip_varname, zw, lats, lons, dlatlon, precip_cache_dir)
+    drain = xr.Dataset({"precip": precip}).sel(time=slice(date_range[0], date_range[1]))
+
+    onsets = _identify_mjo_onsets(omi_index_path, target_phase, amplitude_threshold)
+    tmin = pd.Timestamp(drain.time.min().item())
+    tmax = pd.Timestamp(drain.time.max().item())
+    usable_onsets = [
+        d for d in onsets
+        if (d - pd.Timedelta(days=lag_days_before)) >= tmin
+        and (d + pd.Timedelta(days=lag_days_after - 1)) <= tmax
+    ]
+    if not usable_onsets:
+        raise ValueError(
+            f"No phase-{target_phase} onsets found with a full lag window inside "
+            f"{date_range} -- widen date_range or shrink the lag window."
+        )
+    print(f"  {len(onsets)} phase-{target_phase} onsets found in the OMI record; "
+          f"{len(usable_onsets)} have a full lag window inside {date_range}.")
+
+    pieces = []
+    for onset in usable_onsets:
+        w0 = onset - pd.Timedelta(days=lag_days_before)
+        w1 = onset + pd.Timedelta(days=lag_days_after - 1)
+        piece = drain.precip.sel(time=slice(w0, w1))
+        if piece.sizes["time"] != window_len:
+            continue  # gap in the precip record for this event -- skip rather than misalign
+        pieces.append(piece.assign_coords(time=np.arange(window_len)))
+    if not pieces:
+        raise ValueError("No usable onsets had a complete, gap-free precip window -- "
+                          "check precip_glob coverage.")
+    print(f"  {len(pieces)} events contributed to the composite "
+          f"(after dropping any with data gaps).")
+
+    stacked = xr.concat(pieces, dim="event")
+    mean_lag = stacked.mean(dim="event").values   # (lag, lat, lon)
+    var_lag = stacked.var(dim="event").values      # (lag, lat, lon)
+
+    shape_lag, scale_lag = _method_of_moments(mean_lag, var_lag, scale_qc_max)
+
+    n_tiles = int(np.ceil(365 / window_len))
+    shape_daily = np.tile(shape_lag, (n_tiles, 1, 1))[:365]
+    scale_daily = np.tile(scale_lag, (n_tiles, 1, 1))[:365]
+    shape_daily = torch.nan_to_num(torch.as_tensor(shape_daily), nan=0.0, posinf=0.0, neginf=0.0)
+    scale_daily = torch.nan_to_num(torch.as_tensor(scale_daily), nan=0.0, posinf=0.0, neginf=0.0)
+    shape_daily = torch.where(shape_daily < 0.0, torch.zeros_like(shape_daily), shape_daily)
+    scale_daily = torch.where(scale_daily < 0.0, torch.zeros_like(scale_daily), scale_daily)
+
+    os.makedirs(output_dir, exist_ok=True)
+    shape_path = os.path.join(output_dir, f"shape_{name}.pt")
+    scale_path = os.path.join(output_dir, f"scale_{name}.pt")
+    torch.save(shape_daily, shape_path)
+    torch.save(scale_daily, scale_path)
+    print(f"  Saved {shape_path}")
+    print(f"  Saved {scale_path}")
+
+    if make_diagnostic_plot:
+        _save_diagnostic_plot(output_dir, name, lats, lons, shape_daily, scale_daily)
+
+    return shape_daily, scale_daily, usable_onsets
+
+
 def zero_shape_scale(output_dir, name, zw, make_diagnostic_plot=True):
     """
     Explicit all-zero shape/scale pair (a shape of 0 disables the gamma

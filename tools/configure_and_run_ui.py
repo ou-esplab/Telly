@@ -14,7 +14,7 @@ import ipywidgets as w
 import yaml
 
 from generate_heating import generate_heating_file
-from generate_shape_scale import fit_gamma_shape_scale, zero_shape_scale
+from generate_shape_scale import fit_gamma_shape_scale, fit_gamma_shape_scale_mjo, zero_shape_scale
 from run_pipeline import run_pipeline_stages
 import os
 import sys
@@ -369,14 +369,16 @@ def build_and_display_ui(project_root):
 
     # --- Shape/scale generator (gamma_ac) ---
     SS_GEN_MODES = ["Use control default (shapeAC.pt / scaleAC.pt)", "Fit new: Control period",
-                     "Fit new: Composite (e.g. El Nino)", "Generate: No heating (zero)"]
+                     "Fit new: Composite (e.g. El Nino)", "Fit new: MJO composite",
+                     "Generate: No heating (zero)"]
     # Fixed labels for the fit-based modes: there's no source file to derive a
     # name from (they compute new data from a date range, not copy a file), and
     # a stable default matches this notebook's "generate once, then Run Pipeline
     # against exactly that" flow better than baking in dates that would make the
     # name drift every time a date field is tweaked. Still editable afterward.
     _SS_MODE_FALLBACK_NAME = {
-        SS_GEN_MODES[1]: "ControlFit", SS_GEN_MODES[2]: "Composite", SS_GEN_MODES[3]: "NoHeating",
+        SS_GEN_MODES[1]: "ControlFit", SS_GEN_MODES[2]: "Composite",
+        SS_GEN_MODES[3]: "MJO_Phase3", SS_GEN_MODES[4]: "NoHeating",
     }
     r_ss_gen_mode = w.Dropdown(options=SS_GEN_MODES, value=SS_GEN_MODES[0],
                                 description="Shape/scale source:", style=_LABEL_STYLE, layout=_wide())
@@ -406,6 +408,19 @@ def build_and_display_ui(project_root):
         placeholder="e.g. 1997 2015 2023 (commas or spaces) -- each becomes a "
                     "Jul(year)\u2013Jun(year+1) window",
         style=_LABEL_STYLE, layout=_wide())
+    # MJO composite: identifies real events from the OMI index by phase +
+    # amplitude, then composites CMORPH precip by lag-day relative to each
+    # event's onset and tiles the short result to fill the model's 365-day
+    # shape/scale cycle (see EXPERIMENTS.md's MJO section for why tiling
+    # works with zero model-code changes, and how the phase formula and lag
+    # window were validated).
+    ss_mjo_omi_index_path = w.Text(
+        value="/data/esplab/shared/obs/indices/OMI/omi.1x.txt",
+        description="OMI index file:", style=_LABEL_STYLE, layout=_wide())
+    ss_mjo_phase = w.Dropdown(options=list(range(1, 9)), value=3, description="MJO phase:", style=_LABEL_STYLE)
+    ss_mjo_amplitude_threshold = w.FloatText(value=1.0, description="Min amplitude:", style=_LABEL_STYLE)
+    ss_mjo_lag_before = w.IntText(value=5, description="Lag days before onset:", style=_LABEL_STYLE)
+    ss_mjo_lag_after = w.IntText(value=15, description="Lag days after onset:", style=_LABEL_STYLE)
     ss_gen_output = w.Output()
     ss_gen_button = w.Button(description="Generate Shape/Scale Files", button_style="warning")
 
@@ -551,11 +566,15 @@ def build_and_display_ui(project_root):
         mode = change["new"]
         is_control_fit = mode == "Fit new: Control period"
         is_composite = mode == "Fit new: Composite (e.g. El Nino)"
+        is_mjo = mode == "Fit new: MJO composite"
         is_default = mode == SS_GEN_MODES[0]
         for widget in (ss_precip_glob, ss_precip_varname, ss_start_date, ss_end_date):
-            widget.layout.display = "" if (is_control_fit or is_composite) else "none"
-        ss_scale_qc_max.layout.display = "" if is_composite else "none"
+            widget.layout.display = "" if (is_control_fit or is_composite or is_mjo) else "none"
+        ss_scale_qc_max.layout.display = "" if (is_composite or is_mjo) else "none"
         ss_composite_years.layout.display = "" if is_composite else "none"
+        for widget in (ss_mjo_omi_index_path, ss_mjo_phase, ss_mjo_amplitude_threshold,
+                       ss_mjo_lag_before, ss_mjo_lag_after):
+            widget.layout.display = "" if is_mjo else "none"
         ss_gen_button.layout.display = "none" if is_default else ""
         if is_default:
             r_heating_name.value = GAMMA_CONTROL["heating_name"]
@@ -703,6 +722,26 @@ def build_and_display_ui(project_root):
                 mode = r_ss_gen_mode.value
                 if mode == "Generate: No heating (zero)":
                     zero_shape_scale(r_preprocess_path.value, r_heating_name.value, a_zw.value)
+                elif mode == "Fit new: MJO composite":
+                    if not (ss_start_date.value and ss_end_date.value):
+                        raise ValueError("Fit start/end date required (precip availability window to composite within).")
+                    if not ss_mjo_omi_index_path.value:
+                        raise ValueError("OMI index file path is required.")
+                    fit_gamma_shape_scale_mjo(
+                        precip_glob=ss_precip_glob.value,
+                        precip_varname=ss_precip_varname.value,
+                        date_range=(str(ss_start_date.value), str(ss_end_date.value)),
+                        zw=a_zw.value,
+                        output_dir=r_preprocess_path.value,
+                        name=r_heating_name.value,
+                        omi_index_path=ss_mjo_omi_index_path.value,
+                        target_phase=ss_mjo_phase.value,
+                        lag_days_before=ss_mjo_lag_before.value,
+                        lag_days_after=ss_mjo_lag_after.value,
+                        amplitude_threshold=ss_mjo_amplitude_threshold.value,
+                        scale_qc_max=ss_scale_qc_max.value,
+                        precip_cache_dir=a_precip_cache_dir.value or None,
+                    )
                 else:
                     if not (ss_start_date.value and ss_end_date.value):
                         raise ValueError("Fit start/end date required.")
@@ -774,6 +813,8 @@ def build_and_display_ui(project_root):
             r_heating_name, ss_status,
             ss_precip_glob, ss_precip_varname, ss_start_date, ss_end_date, ss_scale_qc_max,
             ss_composite_years,
+            ss_mjo_omi_index_path, ss_mjo_phase, ss_mjo_amplitude_threshold,
+            ss_mjo_lag_before, ss_mjo_lag_after,
             ss_gen_button, ss_gen_output,
         ],
         layout=_group_box(),
