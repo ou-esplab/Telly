@@ -210,7 +210,7 @@ def _save_diagnostic_plot(output_dir, name, lats, lons, shape_daily, scale_daily
 
 def fit_gamma_shape_scale(precip_glob, precip_varname, date_range, zw, output_dir, name,
                            composite_windows=None, scale_qc_max=None, dummy_leap_year=1952,
-                           precip_cache_dir=None, make_diagnostic_plot=True):
+                           precip_cache_dir=None, make_diagnostic_plot=True, exclude_dates=None):
     """
     Fit gamma-distribution shape/scale parameters to daily precipitation.
 
@@ -246,6 +246,15 @@ def fit_gamma_shape_scale(precip_glob, precip_varname, date_range, zw, output_di
                         sanity-check figure to output_dir/diagnostic_{name}.png
                         (shape/scale maps, an annual-cycle line plot, and for a
                         composite fit, a composite-vs-control comparison).
+    exclude_dates    : optional set/collection of dates to drop from date_range
+                        before fitting, e.g. MJO-active days -- so the
+                        resulting climatology represents "conditions when the
+                        excluded days are absent" rather than all of
+                        date_range indiscriminately. Applied once, right
+                        after loading, before the day-of-year groupby --
+                        agnostic to *why* dates are excluded (see this
+                        module's _mjo_exclude_dates() for the MJO-specific
+                        caller). None (default) excludes nothing.
 
     Returns (shape_tensor, scale_tensor), each shape (365, jmax, imax),
     dtype float64. Also written to output_dir as shape_{name}.pt / scale_{name}.pt.
@@ -256,6 +265,9 @@ def fit_gamma_shape_scale(precip_glob, precip_varname, date_range, zw, output_di
     precip = _load_or_build_regridded_precip(
         precip_glob, precip_varname, zw, lats, lons, dlatlon, precip_cache_dir)
     drain = xr.Dataset({"precip": precip}).sel(time=slice(date_range[0], date_range[1]))
+    if exclude_dates:
+        keep = ~drain.time.to_index().isin(exclude_dates)
+        drain = drain.isel(time=keep)
 
     mean = drain.precip.groupby("time.dayofyear").mean(dim="time")
     anom = drain.precip.groupby("time.dayofyear") - mean
@@ -357,33 +369,77 @@ def _mjo_phase(pc1, pc2):
     return ((angle_deg + 157.5) // 45 % 8 + 1).astype(int)
 
 
-def _identify_mjo_onsets(omi_index_path, target_phase, amplitude_threshold=1.0):
-    """
-    Parses NOAA PSL's omi.1x.txt (whitespace-delimited, no header: year month
-    day PC1 PC2 amplitude) and returns the onset date (first day) of every
-    contiguous run where phase == target_phase and amplitude > amplitude_threshold.
-    """
+def _read_omi_index(omi_index_path):
+    """Parses NOAA PSL's omi.1x.txt (whitespace-delimited, no header: year
+    month day PC1 PC2 amplitude) into a DataFrame with date/phase columns."""
     df = pd.read_csv(omi_index_path, sep=r"\s+",
                       names=["year", "month", "day", "PC1", "PC2", "amplitude"])
     df["date"] = pd.to_datetime(df[["year", "month", "day"]])
     df = df.sort_values("date").reset_index(drop=True)
     df["phase"] = _mjo_phase(df["PC1"].values, df["PC2"].values)
+    return df
 
-    active = (df["phase"] == target_phase) & (df["amplitude"] > amplitude_threshold)
+
+def _identify_mjo_onsets(omi_index_path, target_phases, amplitude_threshold=1.0,
+                          season_months=None):
+    """
+    Returns the onset date (first day) of every contiguous run where
+    phase is in target_phases and amplitude > amplitude_threshold.
+
+    target_phases : a single phase (int) or a list/tuple of phases (e.g. an
+                     adjacent pair like [8, 1]) -- a day sequence that stays
+                     active while transitioning between paired phases counts
+                     as one continuous episode, not two, since grouping only
+                     looks at the active boolean, not which specific phase.
+    season_months : optional iterable of month numbers (e.g. {11,12,1,2,3,4}
+                     for boreal winter); if given, only days in these months
+                     are ever eligible to be "active" -- restricting which
+                     season onsets/composites are drawn from. None (default)
+                     = no restriction, any month.
+    """
+    if isinstance(target_phases, int):
+        target_phases = [target_phases]
+    df = _read_omi_index(omi_index_path)
+
+    active = df["phase"].isin(target_phases) & (df["amplitude"] > amplitude_threshold)
+    if season_months is not None:
+        active &= df["date"].dt.month.isin(season_months)
     group_id = (active != active.shift(fill_value=False)).cumsum()
     onsets = df.loc[active].groupby(group_id[active])["date"].first().tolist()
     return onsets
 
 
+def _mjo_exclude_dates(omi_index_path, amplitude_threshold=1.0, season_months=None):
+    """
+    Returns the set of dates to drop to build an "MJO-inactive" climatology:
+    every date where OMI amplitude > amplitude_threshold (active, any phase),
+    plus -- if season_months is given -- every date outside those months too.
+    Meant to be passed directly as fit_gamma_shape_scale's exclude_dates, so
+    the remaining (kept) dates are exactly "in-season and MJO-inactive" in
+    one step -- matching the same season restriction used for the
+    phase-pair composites this baseline is compared against (comparing a
+    season-restricted composite to an all-year-inactive baseline would
+    reintroduce the seasonal-averaging-window mismatch documented in
+    EXPERIMENTS.md).
+    """
+    df = _read_omi_index(omi_index_path)
+    exclude = df["amplitude"] > amplitude_threshold
+    if season_months is not None:
+        exclude = exclude | ~df["date"].dt.month.isin(season_months)
+    return set(df.loc[exclude, "date"])
+
+
 def fit_gamma_shape_scale_mjo(precip_glob, precip_varname, date_range, zw, output_dir, name,
-                               omi_index_path, target_phase,
+                               omi_index_path, target_phases,
                                lag_days_before=5, lag_days_after=15,
                                amplitude_threshold=1.0, scale_qc_max=None,
+                               season_months=None,
                                precip_cache_dir=None, make_diagnostic_plot=True):
     """
     Fit gamma-distribution shape/scale parameters to a lag-day composite of
-    real MJO events in one phase, then tile the resulting short cycle to fill
-    the full 365-day array RunModel.Gamma.py expects.
+    real MJO events in one phase (or an adjacent pair), then tile the
+    resulting short cycle to fill the full 365-day array RunModel.Gamma.py
+    expects.
 
     RunModel.Gamma.py indexes shape[daynumber]/scale[daynumber] purely by the
     real calendar day-of-year (0-364), with no other periodicity logic (see
@@ -397,7 +453,8 @@ def fit_gamma_shape_scale_mjo(precip_glob, precip_varname, date_range, zw, outpu
     intraseasonal structure being composited.
 
     omi_index_path : path to NOAA PSL's omi.1x.txt.
-    target_phase    : MJO phase 1-8 to composite onsets for (see _mjo_phase).
+    target_phases   : MJO phase 1-8 (int) or an adjacent pair (e.g. [8, 1],
+                      [2, 3]) to composite onsets for (see _mjo_phase).
     lag_days_before/lag_days_after: composite window is
                       [onset - lag_days_before, onset + lag_days_after), i.e.
                       lag_days_before + lag_days_after days total. Tunable --
@@ -408,6 +465,14 @@ def fit_gamma_shape_scale_mjo(precip_glob, precip_varname, date_range, zw, outpu
                       relevant here, since the event count compositing a
                       single phase is probably smaller than the ENSO
                       composite's whole-year samples.
+    season_months    : optional iterable of month numbers (e.g.
+                      {11,12,1,2,3,4} for boreal winter) restricting which
+                      onsets are eligible -- MJO amplitude/character varies
+                      seasonally, so mixing all months into one composite
+                      blends different regimes together. None = no
+                      restriction (any month). A short window can still
+                      bleed a few days past the season boundary at an
+                      onset near the edge -- not additionally clipped.
 
     Returns (shape_tensor, scale_tensor, usable_onsets). Also written to
     output_dir as shape_{name}.pt / scale_{name}.pt.
@@ -423,7 +488,7 @@ def fit_gamma_shape_scale_mjo(precip_glob, precip_varname, date_range, zw, outpu
         precip_glob, precip_varname, zw, lats, lons, dlatlon, precip_cache_dir)
     drain = xr.Dataset({"precip": precip}).sel(time=slice(date_range[0], date_range[1]))
 
-    onsets = _identify_mjo_onsets(omi_index_path, target_phase, amplitude_threshold)
+    onsets = _identify_mjo_onsets(omi_index_path, target_phases, amplitude_threshold, season_months)
     tmin = pd.Timestamp(drain.time.min().item())
     tmax = pd.Timestamp(drain.time.max().item())
     usable_onsets = [
@@ -433,10 +498,10 @@ def fit_gamma_shape_scale_mjo(precip_glob, precip_varname, date_range, zw, outpu
     ]
     if not usable_onsets:
         raise ValueError(
-            f"No phase-{target_phase} onsets found with a full lag window inside "
+            f"No phase-{target_phases} onsets found with a full lag window inside "
             f"{date_range} -- widen date_range or shrink the lag window."
         )
-    print(f"  {len(onsets)} phase-{target_phase} onsets found in the OMI record; "
+    print(f"  {len(onsets)} phase-{target_phases} onsets found in the OMI record; "
           f"{len(usable_onsets)} have a full lag window inside {date_range}.")
 
     pieces = []

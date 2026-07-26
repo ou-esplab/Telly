@@ -378,7 +378,7 @@ def build_and_display_ui(project_root):
     # name drift every time a date field is tweaked. Still editable afterward.
     _SS_MODE_FALLBACK_NAME = {
         SS_GEN_MODES[1]: "ControlFit", SS_GEN_MODES[2]: "Composite",
-        SS_GEN_MODES[3]: "MJO_Phase3", SS_GEN_MODES[4]: "NoHeating",
+        SS_GEN_MODES[3]: "MJO_Phase23", SS_GEN_MODES[4]: "NoHeating",
     }
     r_ss_gen_mode = w.Dropdown(options=SS_GEN_MODES, value=SS_GEN_MODES[0],
                                 description="Shape/scale source:", style=_LABEL_STYLE, layout=_wide())
@@ -417,7 +417,17 @@ def build_and_display_ui(project_root):
     ss_mjo_omi_index_path = w.Text(
         value="/data/esplab/shared/obs/indices/OMI/omi.1x.txt",
         description="OMI index file:", style=_LABEL_STYLE, layout=_wide())
-    ss_mjo_phase = w.Dropdown(options=list(range(1, 9)), value=3, description="MJO phase:", style=_LABEL_STYLE)
+    # The 4 standard adjacent octant-pairs used in MJO research (each covers
+    # one broad convective region at two adjacent points in its lifecycle),
+    # not all 8 phases individually -- matches the generated
+    # shape_MJO_Phase{81,23,45,67}.pt set. Restricted to boreal winter
+    # (Nov-Apr) onsets -- MJO amplitude/character varies seasonally, and
+    # mixing all months into one composite blends different regimes
+    # together (see EXPERIMENTS.md's MJO section).
+    _MJO_PHASE_PAIRS = {"8/1": (8, 1), "2/3": (2, 3), "4/5": (4, 5), "6/7": (6, 7)}
+    _MJO_SEASON_MONTHS = {11, 12, 1, 2, 3, 4}
+    ss_mjo_phase = w.Dropdown(options=list(_MJO_PHASE_PAIRS), value="2/3",
+                               description="MJO phase pair:", style=_LABEL_STYLE)
     ss_mjo_amplitude_threshold = w.FloatText(value=1.0, description="Min amplitude:", style=_LABEL_STYLE)
     ss_mjo_lag_before = w.IntText(value=5, description="Lag days before onset:", style=_LABEL_STYLE)
     ss_mjo_lag_after = w.IntText(value=15, description="Lag days after onset:", style=_LABEL_STYLE)
@@ -735,11 +745,12 @@ def build_and_display_ui(project_root):
                         output_dir=r_preprocess_path.value,
                         name=r_heating_name.value,
                         omi_index_path=ss_mjo_omi_index_path.value,
-                        target_phase=ss_mjo_phase.value,
+                        target_phases=_MJO_PHASE_PAIRS[ss_mjo_phase.value],
                         lag_days_before=ss_mjo_lag_before.value,
                         lag_days_after=ss_mjo_lag_after.value,
                         amplitude_threshold=ss_mjo_amplitude_threshold.value,
                         scale_qc_max=ss_scale_qc_max.value,
+                        season_months=_MJO_SEASON_MONTHS,
                         precip_cache_dir=a_precip_cache_dir.value or None,
                     )
                 else:

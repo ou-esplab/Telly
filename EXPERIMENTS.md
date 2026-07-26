@@ -552,36 +552,74 @@ so a *short, repeating* pattern tiled to fill 365 days cycles through the model 
   not an exact-match optimum fit to noise, and 157.5° (a half-sector shift from the naive guess)
   matches the physically-sensible convention of sectors being *centered* on cardinal directions
   rather than bounded by them.
-- **Event onsets**: contiguous runs of `phase == target` & `amplitude > 1.0`; onset = first day of
-  each run. Phase 3 (Indian Ocean-centered convection, the first phase built): 166 onsets across the
-  1991-2026 OMI record (~4.7/year), median 60-day gap between onsets (matches expected MJO
-  recurrence), no evidence of episode fragmentation.
+- **8 phases → 4 adjacent octant-pairs, not built individually.** Phase 3 alone was the first
+  proof-of-concept (validated the whole pipeline end-to-end, then superseded). The real set groups
+  the 8 phases into the 4 pairs standard in MJO research, each covering one broad convective region
+  at two adjacent points in its lifecycle: **8/1** (Western Hemisphere/Africa), **2/3** (Indian
+  Ocean), **4/5** (Maritime Continent), **6/7** (Western Pacific) — `shape_MJO_Phase{81,23,45,67}.pt`.
+  `_identify_mjo_onsets()`/`fit_gamma_shape_scale_mjo()` accept `target_phases` as a single int or a
+  list (e.g. `[8, 1]`); the existing contiguous-episode grouping needed no change, since a day
+  sequence that stays active while transitioning between the two paired phases (e.g. 2→3) is already
+  one continuous episode, not two — it only looks at the active boolean, not which specific phase.
+- **Restricted to boreal winter (Nov-Apr) onsets.** MJO amplitude/character varies seasonally
+  (strongest/most canonical boreal winter; weaker, monsoon-entangled boreal summer) — the
+  unrestricted phase-3 file mixed all months together. Added `season_months` to
+  `_identify_mjo_onsets()`, applied as an extra condition on the active mask (a day outside the
+  season is never eligible), so onsets are guaranteed within-season by construction. Onset counts
+  with the restriction (1991-2026 OMI record): **8/1: 121, 2/3: 118, 4/5: 110, 6/7: 113** — all
+  months present are exactly Nov-Apr, median gaps 58-66 days (matches expected MJO recurrence),
+  minimal fragmentation (2-6 gaps <20 days out of ~110-120 each). A lag window can still bleed a few
+  days past the season boundary at an onset near the edge — accepted, not additionally clipped.
 - **Compositing**: for each onset, a window [onset-5, onset+15) (20 days) of CMORPH precip is
-  extracted and stacked by *lag day* (not day-of-year) across all 127 usable events (1998-2024,
-  CMORPH's available range) — 127 of 166 onsets had a complete window inside that range.
-  Deliberately **skips** `fit_gamma_shape_scale()`'s monthly-resample-then-cubic-upsample smoothing
-  step (built for the ENSO composites' slowly-varying *annual* cycle) — monthly-binning a 20-day
-  cycle would leave ~1 bin per cycle and destroy the very structure being composited. Works at daily
-  lag resolution throughout, method-of-moments fit per lag-day, then tiled (`np.tile`, truncated) to
-  365 days.
-- **Tile-wrap seam**: 365/20 isn't integer, so the last tile is truncated and day 364→day 0 has a
-  discontinuity — checked directly: the wrap jump (~7 units in scale, at a sample tropical point) is
-  *smaller* than the largest ordinary day-to-day jump elsewhere in the same cycle (~47 units), i.e.
-  it blends into the composite's own natural noise level rather than standing out. No special
-  seam-smoothing was needed for this window length.
-- **Validation run**: `AC_MJO` (`config/experiments/AC_MJO.yaml`, `shape_file_override:
-  shape_MJO_Phase3.pt`) run 90 days end-to-end — completed without error, physically plausible
-  absolute fields. Its `..._diff.png` against `AC_Test` shows the same large magnitude as
-  `AC_Cntrl`'s did — expected per the spin-up/short-sample section above (only 30 usable
-  post-spinup days), **not** yet a meaningful estimate of any real MJO-forced teleconnection signal.
-  A multi-year run (matching `AC_ElNino`/`AC_LaNina`'s scale) is needed before this comparison means
-  anything scientifically; deliberately deferred to avoid 3-way resource contention with those two
-  extensions already in progress.
-- **Notebook UI**: `tools/configure_and_run_ui.py`'s shape/scale panel has a "Fit new: MJO
-  composite" mode (phase, min amplitude, lag-before/after, OMI index path fields), calling
-  `fit_gamma_shape_scale_mjo()` the same way the CLI does — verified via a stubbed-exec harness
-  (correct widget visibility per mode, correct call arguments).
-- **Deferred**: the other 7 MJO phases (only phase 3 built/validated so far).
+  extracted and stacked by *lag day* (not day-of-year) across usable events (84-91 per pair,
+  1998-2024, CMORPH's available range). Deliberately **skips**
+  `fit_gamma_shape_scale()`'s monthly-resample-then-cubic-upsample smoothing step (built for the
+  ENSO composites' slowly-varying *annual* cycle) — monthly-binning a 20-day cycle would leave ~1
+  bin per cycle and destroy the very structure being composited. Works at daily lag resolution
+  throughout, method-of-moments fit per lag-day, then tiled (`np.tile`, truncated) to 365 days.
+  Diagnostic plots for all 4 pairs show a clean repeating ~20-day cycle with no seam artifact
+  (confirmed for phase 3 originally: wrap jump smaller than the cycle's own natural day-to-day
+  variability).
+- **A genuine "no MJO" baseline is not zero heating.** First attempt reused `zero_shape_scale()`
+  (as used for `AC_noheating`) — wrong, since that zeroes the *entire* annual cycle too, not just
+  the MJO signal. `AC_Test`'s own control heating is a real annual cycle, but built from the entire
+  precip record with no regard to MJO state, so it's not a clean "MJO-absent" baseline either. Built
+  instead: a new day-of-year control climatology (`fit_gamma_shape_scale()`'s existing plain path,
+  new `exclude_dates` parameter) fit from the same precip source/date range as the composites, but
+  **excluding every date where OMI amplitude > 1.0** (`_mjo_exclude_dates()`) — `shape_MJO_Inactive.pt`.
+  Verified: the resulting diagnostic plot shows one smooth annual cycle (spring peak, smaller autumn
+  peak at the sample equatorial-Pacific point), not a repeating intraseasonal pattern — the right
+  shape for a day-of-year climatology.
+  **Season restriction was tried here too and found unnecessary — and actually broken.** Dropping
+  all non-Nov-Apr *dates* from the fit crashed (`groupby("time.dayofyear")` sorts numerically, so a
+  Nov-Apr selection — day-of-year ~305-365 then 1-120 — no longer forms a dense, chronologically
+  ordered sequence; stamping it onto a dummy calendar scrambled the seasonal placement, caught
+  immediately by a `ValueError`, not a silent error). On reflection this restriction was never
+  needed: unlike the short-run-vs-`AC_Test` seasonal mismatch above (one blended all-year number vs.
+  a short sample), the day-of-year groupby here *already* keeps every calendar day's climatology
+  separate — Jan 15's mean is only ever informed by Jan-15 samples across all ~27 years, never by
+  June data — so excluding only the specific active-MJO dates (any month) still yields a fully
+  correct seasonal cycle. `season_months` is only meaningful for the phase-pair composites' lag-day
+  mechanism, which has no equivalent per-calendar-day protection.
+- **Experiment configs**: `config/experiments/AC_MJO{81,23,45,67}.yaml` (the 4 phase-pairs) and
+  `AC_MJO_Inactive.yaml` (the baseline), all modeled on the original `AC_MJO.yaml` structure
+  (`cold_start: true`, `toffset: 0`, `run_length_days: 90`, `spinup_days: 60`,
+  `control_experiment: AC_Test`) — differing only in `experiment_name`/`heating_name`/
+  `shape_file_override`/`scale_file_override`. `AC_MJO.yaml` and `shape_MJO_Phase3.pt`/
+  `scale_MJO_Phase3.pt` removed once `AC_MJO23` (its direct replacement) was validated.
+- **Notebook UI**: `tools/configure_and_run_ui.py`'s shape/scale panel's "Fit new: MJO composite"
+  mode now offers the 4 phase-pairs as a dropdown (`"8/1"`/`"2/3"`/`"4/5"`/`"6/7"`, default `"2/3"`)
+  rather than picking a single 1-8 phase, parsed into the `target_phases` tuple `fit_gamma_shape_scale_mjo()`
+  expects; the boreal-winter `season_months` restriction is applied unconditionally (no separate UI
+  toggle). Verified via a stubbed-exec harness: correct 4 options, correct `target_phases`/
+  `season_months` passed to the fit call for each pair.
+- **Validation run**: `AC_MJO23` (the 2/3 pair) run 90 days end-to-end — completed without error,
+  physically plausible absolute fields. Its `..._diff.png` against `AC_Test` is expected to show the
+  same large-magnitude, not-yet-meaningful pattern the original phase-3 run and `AC_Cntrl` did (only
+  30 usable post-spinup days) — a multi-year run (matching `AC_ElNino`/`AC_LaNina`'s scale) is needed
+  before any of these 5 new experiments' control-diffs mean anything scientifically; deliberately
+  deferred to avoid resource contention with those two extensions.
+- **Deferred**: multi-year runs for all 5 new experiments (4 pairs + inactive baseline).
 
 ---
 
