@@ -370,6 +370,34 @@ def build_and_display_ui(project_root):
     r_preprocess_path.observe(_update_heating_status, names="value")
 
     # --- Shape/scale generator (gamma_ac) ---
+    _EXISTING_MODE_PREFIX = "Use existing: "
+
+    # Names excluded from the dynamic "Use existing: ..." discovery below
+    # because a fixed SS_GEN_MODES entry already covers that exact case --
+    # "noheating" is a real, in-use file (AC_noheating.yaml's
+    # shape_file_override/scale_file_override), just redundant with
+    # "Generate: No heating (zero)" as a dropdown option.
+    _EXISTING_MODE_EXCLUDE = {"noheating"}
+
+    def _discover_existing_heating_names(preprocess_path):
+        # Any shape_{name}.pt with a matching scale_{name}.pt in the control
+        # preprocess dir -- every composite/MJO/trend/etc. heating pair
+        # generated so far, discovered dynamically so new ones show up here
+        # automatically without editing this file again. Excludes the bare
+        # control default (shapeAC.pt/scaleAC.pt), which "Use control
+        # default" above already covers.
+        if not os.path.isdir(preprocess_path):
+            return []
+        names = []
+        for fname in os.listdir(preprocess_path):
+            m = re.match(r"^shape_(.+)\.pt$", fname)
+            if (m and m.group(1) not in _EXISTING_MODE_EXCLUDE
+                    and os.path.exists(os.path.join(preprocess_path, f"scale_{m.group(1)}.pt"))):
+                names.append(m.group(1))
+        return sorted(names)
+
+    _EXISTING_HEATING_NAMES = _discover_existing_heating_names(GAMMA_CONTROL["preprocess_path"])
+
     SS_GEN_MODES = ["Use control default (shapeAC.pt / scaleAC.pt)", "Fit new: Control period",
                      "Fit new: Composite (e.g. El Nino)", "Fit new: MJO composite",
                      "Fit new: Trend", "Generate: No heating (zero)"]
@@ -382,6 +410,11 @@ def build_and_display_ui(project_root):
         SS_GEN_MODES[1]: "ControlFit", SS_GEN_MODES[2]: "Composite",
         SS_GEN_MODES[3]: "MJO_Phase23", SS_GEN_MODES[4]: "Trend", SS_GEN_MODES[5]: "NoHeating",
     }
+    # Appended after the fixed modes (indices above stay stable) -- one
+    # dropdown entry per already-generated heating file pair, so a real
+    # completed experiment's heating can be reused directly without typing
+    # filenames into Shape/Scale file by hand.
+    SS_GEN_MODES = SS_GEN_MODES + [f"{_EXISTING_MODE_PREFIX}{name}" for name in _EXISTING_HEATING_NAMES]
     r_ss_gen_mode = w.Dropdown(options=SS_GEN_MODES, value=SS_GEN_MODES[0],
                                 description="Shape/scale source:", style=_LABEL_STYLE, layout=_wide())
     r_ss_reset_note = w.HTML(
@@ -596,6 +629,7 @@ def build_and_display_ui(project_root):
         is_mjo = mode == "Fit new: MJO composite"
         is_trend = mode == "Fit new: Trend"
         is_default = mode == SS_GEN_MODES[0]
+        is_existing = mode.startswith(_EXISTING_MODE_PREFIX)
         for widget in (ss_precip_glob, ss_precip_varname, ss_start_date, ss_end_date):
             widget.layout.display = "" if (is_control_fit or is_composite or is_mjo or is_trend) else "none"
         ss_scale_qc_max.layout.display = "" if (is_composite or is_mjo or is_trend) else "none"
@@ -605,7 +639,10 @@ def build_and_display_ui(project_root):
             widget.layout.display = "" if is_mjo else "none"
         for widget in (ss_trend_control_shape_path, ss_trend_control_scale_path, ss_trend_target_year):
             widget.layout.display = "" if is_trend else "none"
-        ss_gen_button.layout.display = "none" if is_default else ""
+        # Neither "use control default" nor "use an already-generated heating
+        # file" need the Generate button -- both just point Shape/Scale file
+        # at something that already exists on disk.
+        ss_gen_button.layout.display = "none" if (is_default or is_existing) else ""
         if is_default:
             r_heating_name.value = GAMMA_CONTROL["heating_name"]
             r_start_year.value = GAMMA_CONTROL["start_year"]
@@ -613,6 +650,12 @@ def build_and_display_ui(project_root):
             r_preprocess_path.value = GAMMA_CONTROL["preprocess_path"]
             r_shape_file.value = ""
             r_scale_file.value = ""
+        elif is_existing:
+            name = mode[len(_EXISTING_MODE_PREFIX):]
+            r_heating_name.value = name
+            r_preprocess_path.value = GAMMA_CONTROL["preprocess_path"]
+            r_shape_file.value = f"shape_{name}.pt"
+            r_scale_file.value = f"scale_{name}.pt"
         else:
             r_heating_name.value = _SS_MODE_FALLBACK_NAME[mode]
 
