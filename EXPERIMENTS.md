@@ -385,6 +385,14 @@ period.  Output is post-processed annually by `PressureInterpMetPy.py` (one
 | `AC_Test` | `shapeAC.pt`, `scaleAC.pt` | **54750** (150 yrs) | `geo_Pressure.nc` (all years); `geo_Pressure_days_1-6540.nc`, `_days_1-18240.nc`; ~122 annual geo files |
 | `AC_warm` | `shapeAC_Warm.pt`, `scaleAC_Warm.pt` | **2160** (6 yrs) | `geo_Pressure_days_1-2160.nc`, `uvel_Pressure_days_1-2160.nc`, `vvel_Pressure_days_1-2160.nc` |
 | `AC_noheating` | `shape_noheating.pt`, `scale_noheating.pt` | **0** (not yet run) | — |
+| `AC_ElNino` | `shape_Composite_ElNino.pt`, `scale_Composite_ElNino.pt` | **7290** (20 yrs) | 243 `temp_Pressure_*.nc` chunks; 24 mean/diff figures in `figures/` |
+| `AC_LaNina` | `shape_Composite_LaNina.pt`, `scale_Composite_LaNina.pt` | **7290** (20 yrs) | 243 `temp_Pressure_*.nc` chunks; 24 mean/diff figures in `figures/` |
+| `AC_MJO81` | `shape_MJO_Phase81.pt`, `scale_MJO_Phase81.pt` | **7290** (20 yrs) | 243 `temp_Pressure_*.nc` chunks; 24 mean/diff figures in `figures/` |
+| `AC_MJO23` | `shape_MJO_Phase23.pt`, `scale_MJO_Phase23.pt` | **7290** (20 yrs) | 243 `temp_Pressure_*.nc` chunks; 24 mean/diff figures in `figures/` |
+| `AC_MJO45` | `shape_MJO_Phase45.pt`, `scale_MJO_Phase45.pt` | **7290** (20 yrs) | 243 `temp_Pressure_*.nc` chunks; 24 mean/diff figures in `figures/` |
+| `AC_MJO67` | `shape_MJO_Phase67.pt`, `scale_MJO_Phase67.pt` | **7290** (20 yrs) | 243 `temp_Pressure_*.nc` chunks; 24 mean/diff figures in `figures/` |
+| `AC_MJO_Inactive` | `shape_MJO_Inactive.pt`, `scale_MJO_Inactive.pt` | **7290** (20 yrs) | 243 `temp_Pressure_*.nc` chunks; 24 mean/diff figures in `figures/` |
+| `AC_Trend` | `shape_Trend.pt`, `scale_Trend.pt` | **7290** (20 yrs) | 243 `temp_Pressure_*.nc` chunks; 24 mean/diff figures in `figures/` |
 
 **Control experiment**: `AC_Test` (default gamma distribution parameters).
 
@@ -525,7 +533,7 @@ comparing a fresh 30-day `gamma_ac` test run (`AC_Cntrl`, same `heating_name: Te
   up most clearly in `temp` because its seasonal cycle is large and spatially smooth, unlike
   `geo`/`uvel`/`vvel`'s noisier synoptic-scale variability, which partially masks the same
   underlying effect for those variables rather than being free of it. Temporary by construction —
-  once a run reaches multiple full years (like the 5-year `AC_ElNino`/`AC_LaNina` extensions), the
+  once a run reaches multiple full years (like the 20-year `AC_ElNino`/`AC_LaNina` extensions), the
   averaging spans all seasons and this cancels out on its own; nothing to fix in the meantime.
 
 **`AC_MJO`: composite MJO heating from real events, tiled as a repeating intraseasonal cycle**
@@ -613,13 +621,97 @@ so a *short, repeating* pattern tiled to fill 365 days cycles through the model 
   expects; the boreal-winter `season_months` restriction is applied unconditionally (no separate UI
   toggle). Verified via a stubbed-exec harness: correct 4 options, correct `target_phases`/
   `season_months` passed to the fit call for each pair.
-- **Validation run**: `AC_MJO23` (the 2/3 pair) run 90 days end-to-end — completed without error,
-  physically plausible absolute fields. Its `..._diff.png` against `AC_Test` is expected to show the
-  same large-magnitude, not-yet-meaningful pattern the original phase-3 run and `AC_Cntrl` did (only
-  30 usable post-spinup days) — a multi-year run (matching `AC_ElNino`/`AC_LaNina`'s scale) is needed
-  before any of these 5 new experiments' control-diffs mean anything scientifically; deliberately
-  deferred to avoid resource contention with those two extensions.
-- **Deferred**: multi-year runs for all 5 new experiments (4 pairs + inactive baseline).
+- **Validation runs**: all 4 phase-pairs (`AC_MJO81`/`AC_MJO23`/`AC_MJO45`/`AC_MJO67`) plus
+  `AC_MJO_Inactive` now run 90 days end-to-end — completed without error, physically plausible
+  absolute fields. `AC_MJO81`/`AC_MJO45`/`AC_MJO67` stalled for hours on first attempt from CPU
+  thread oversubscription (3-4 concurrent `gamma_ac` processes at ~70 threads each on 26 cores) but
+  finished cleanly once contention cleared; `AC_MJO_Inactive` was run after `RunModel.Gamma.py`'s
+  thread-count fix (see the Trend section below) and completed quickly at ~8 threads/process. Each
+  `..._diff.png` against `AC_Test` shows the same large-magnitude, not-yet-meaningful pattern the
+  original phase-3 run and `AC_Cntrl` did (only 30 usable post-spinup days) — a multi-year run
+  (matching `AC_ElNino`/`AC_LaNina`'s scale) is needed before any of these 5 experiments'
+  control-diffs mean anything scientifically.
+- **Done (2026-08-10)**: all 5 experiments (4 pairs + inactive baseline) extended to the same
+  7290-day (20-year) target as `AC_ElNino`/`AC_LaNina`/`AC_Trend` — see the Gamma_AC table above.
+  Scientific interpretation of the resulting control-diffs (now that they're long enough to be
+  meaningful) hasn't been done yet.
+
+**`AC_Trend`: the observed CMORPH precipitation trend, added as a delta on top of `AC_Test`'s
+control — isolates the multi-decade drift alone, not a specific mode of variability like the ENSO/
+MJO composites above.**
+
+- **Method**: `fit_gamma_shape_scale_trend()` (`scripts/generate_shape_scale.py`) regresses
+  per-calendar-month mean CMORPH precip against year (`xarray.polyfit`, one OLS fit per month,
+  ~26-27 yearly samples each — not a per-exact-day-of-year regression, which would have only ~26
+  samples/day and be dominated by CMORPH's daily noise), matching the file's existing
+  monthly-resample smoothing philosophy. The 12 monthly slopes are cubic-upsampled to 365 days via
+  the same `upsample_monthly_to_daily()` helper every other fitter in this file uses.
+- **Why the delta isn't simply `slope × record_length` (caught during planning, before any code was
+  written)**: `AC_Test`'s own control mean is itself the average over its fitting record, and for a
+  linearly-trending series, the sample mean of `y` over a set of years is *exactly* the
+  OLS-fitted line's value at the **mean year** of that set (a basic property of least-squares
+  regression — the fitted line always passes through `(mean(year), mean(y))`). So the control's
+  mean already reflects the trend evaluated at the record's *midpoint*, not its start — adding
+  `slope × full_record_span` on top would double-count roughly the first half of the trend. Instead:
+  `delta_mean = slope × (target_year − year_mean)`, where `year_mean` is the regression sample's own
+  mean year (~2011 for the 1998–2024 default record) and `target_year` defaults to the record's last
+  year (2024) — giving "how far the trend has already pulled the climatology from its own long-term
+  average, as of now." At `target_year = year_mean` the delta is exactly 0 (correctly reproduces the
+  plain control). This is **not** a future-projection/extrapolation tool — pushing `target_year` far
+  beyond the observed record is an extrapolation claim the fit provides no basis for.
+- **How the delta modifies shape/scale**: the control's `shape` tensor is left completely
+  unchanged — confirmed bit-identical (`torch.equal`) in the real run below — and only `scale` is
+  recomputed: `scale_new = clip(shape*scale + delta_mean, min=0) / shape`. Since
+  `RunModel.Gamma.py`/`subs1_utils.py`'s `latent_heat_release()` draws
+  `precip = np.random.gamma(shape, scale)`, `mean = shape*scale` and `CV = 1/sqrt(shape)` — holding
+  shape fixed preserves the control's relative day-to-day variability exactly, so this is "delta on
+  the mean only," nothing else. `mean_new` is floored at 0 before dividing (precipitation can't be
+  negative; a strongly negative delta in a drying region could otherwise push it below zero).
+- **Real generation run** (1998-01-01 to 2024-08-31, `target_year` defaulting to 2024,
+  `year_mean` = 2011.0, delta = slope × 13.0 years): `shape_Trend.pt` confirmed bit-identical to
+  `shapeAC.pt`; `scale_Trend.pt` confirmed all-finite and non-negative (min 0.0, max ~299.8, under
+  the 300 QC ceiling). The mean-floor guard triggered on only 1.86% of day-gridpoint cells — a real
+  but rare edge case, not runaway. `|delta_mean| > 10%` of the control's own std
+  (`control_std = scale*sqrt(shape)`) over only 4.3% of the grid — a small but real signal, as
+  expected for a subtle multi-decade trend against high daily-precip variance. The annual-mean trend
+  slope map (`diagnostic_Trend.png`) is spatially noisy at grid scale (expected for daily CMORPH
+  data) but shows coherent large-scale wet/dry structure, and is correctly near-zero poleward of
+  ±~60° (CMORPH's satellite coverage limit — the same limit already baked into `shapeAC.pt` being
+  zero there, so it's inherited automatically, not separately computed).
+- **Caveat**: the ~26-year CMORPH record (1998–2024) is a marginal sample for grid-point-level trend
+  significance — no p-value/significance test is computed, only the signal-to-noise diagnostic panel
+  above; treat low-SNR regions as not yet scientifically meaningful.
+- **Experiment config**: `config/experiments/AC_Trend.yaml`, modeled directly on `AC_MJO23.yaml`
+  (`cold_start: true`, `toffset: 0`, `run_length_days: 90`, `spinup_days: 60`,
+  `control_experiment: AC_Test`), `shape_file_override: shape_Trend.pt` /
+  `scale_file_override: scale_Trend.pt`.
+- **Notebook UI**: `tools/configure_and_run_ui.py`'s shape/scale panel gained a "Fit new: Trend"
+  mode — control shape/scale file paths (defaulting to `shapeAC.pt`/`scaleAC.pt`) and a target-year
+  field (0 = record's last year), wired into `fit_gamma_shape_scale_trend()` the same way the other
+  modes wire into their fitters.
+- **Validation run**: completed 90 days end-to-end via `scripts/run_pipeline.py --screen` (2026-07-28,
+  after a first attempt was deliberately stopped and re-queued to avoid CPU thread oversubscription
+  from concurrent `gamma_ac` runs — see `RunModel.Gamma.py`'s thread-count fix below). No errors;
+  absolute fields physically plausible; `..._diff.png` against `AC_Test` shows the same
+  large-magnitude, not-yet-meaningful pattern as every other 90-day validation in this section (spin-up
+  transient/chaotic-divergence/seasonal-averaging-window-mismatch caveats above apply identically) —
+  expected at this sample size, not evidence of a problem.
+- **Also fixed during this work**: `Gamma_AC_Model/RunModel.Gamma.py` was found to spawn ~70
+  threads/process (26-core machine), long the practical limit on how many `gamma_ac` experiments
+  could run concurrently (see the MJO section's stalled-runs note above). Root cause was two stacked
+  bugs, not a real computational need: (1) a fully dead `LocalCluster()` — instantiated and printed
+  but never connected to a `Client` or given any computation, confirmed to spawn 13 worker processes/
+  26 threads doing nothing; (2) `subs1_utils.py` already set `OMP_NUM_THREADS`/`MKL_NUM_THREADS`/etc.
+  to `4`, but `RunModel.Gamma.py` imported `numpy`/`torch` itself *before* importing `subs1_utils`,
+  so MKL/OpenMP had already sized their thread pools to all 26 cores by the time those env vars were
+  set (confirmed directly: `mkl_get_max_threads()` stayed at 26 regardless of the env var, unless set
+  before numpy/torch import). Fixed by deleting the dead Dask code and moving the env-var assignments
+  to the top of the file, before any numpy/torch import. Verified: thread count dropped to ~8/process
+  on 3 separate real launches; a full 30-day chunk completed cleanly with correct output. `AC_Trend`'s
+  validation run above and `AC_MJO_Inactive`'s (previous section) both used the fixed version.
+- **Done (2026-08-10)**: extended to the same 7290-day (20-year) target as `AC_ElNino`/`AC_LaNina`
+  — see the Gamma_AC table above. Scientific interpretation of the resulting control-diff hasn't
+  been done yet.
 
 ---
 

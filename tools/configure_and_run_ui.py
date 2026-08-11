@@ -14,7 +14,9 @@ import ipywidgets as w
 import yaml
 
 from generate_heating import generate_heating_file
-from generate_shape_scale import fit_gamma_shape_scale, fit_gamma_shape_scale_mjo, zero_shape_scale
+from generate_shape_scale import (
+    fit_gamma_shape_scale, fit_gamma_shape_scale_mjo, fit_gamma_shape_scale_trend, zero_shape_scale,
+)
 from run_pipeline import run_pipeline_stages
 import os
 import sys
@@ -370,7 +372,7 @@ def build_and_display_ui(project_root):
     # --- Shape/scale generator (gamma_ac) ---
     SS_GEN_MODES = ["Use control default (shapeAC.pt / scaleAC.pt)", "Fit new: Control period",
                      "Fit new: Composite (e.g. El Nino)", "Fit new: MJO composite",
-                     "Generate: No heating (zero)"]
+                     "Fit new: Trend", "Generate: No heating (zero)"]
     # Fixed labels for the fit-based modes: there's no source file to derive a
     # name from (they compute new data from a date range, not copy a file), and
     # a stable default matches this notebook's "generate once, then Run Pipeline
@@ -378,7 +380,7 @@ def build_and_display_ui(project_root):
     # name drift every time a date field is tweaked. Still editable afterward.
     _SS_MODE_FALLBACK_NAME = {
         SS_GEN_MODES[1]: "ControlFit", SS_GEN_MODES[2]: "Composite",
-        SS_GEN_MODES[3]: "MJO_Phase23", SS_GEN_MODES[4]: "NoHeating",
+        SS_GEN_MODES[3]: "MJO_Phase23", SS_GEN_MODES[4]: "Trend", SS_GEN_MODES[5]: "NoHeating",
     }
     r_ss_gen_mode = w.Dropdown(options=SS_GEN_MODES, value=SS_GEN_MODES[0],
                                 description="Shape/scale source:", style=_LABEL_STYLE, layout=_wide())
@@ -431,6 +433,21 @@ def build_and_display_ui(project_root):
     ss_mjo_amplitude_threshold = w.FloatText(value=1.0, description="Min amplitude:", style=_LABEL_STYLE)
     ss_mjo_lag_before = w.IntText(value=5, description="Lag days before onset:", style=_LABEL_STYLE)
     ss_mjo_lag_after = w.IntText(value=15, description="Lag days after onset:", style=_LABEL_STYLE)
+    # Trend-only fit: regresses CMORPH's per-calendar-month mean against year,
+    # then adds the trend delta (evaluated at Target year, relative to the
+    # regression's own mean year -- NOT the record length, which would
+    # double-count the trend already baked into the control's own mean; see
+    # fit_gamma_shape_scale_trend's docstring) onto an existing control's
+    # shape/scale. Shape is left unchanged; only scale is adjusted, so
+    # relative day-to-day variability is preserved.
+    ss_trend_control_shape_path = w.Text(
+        value=os.path.join(GAMMA_CONTROL["preprocess_path"], "shapeAC.pt"),
+        description="Control shape file:", style=_LABEL_STYLE, layout=_wide())
+    ss_trend_control_scale_path = w.Text(
+        value=os.path.join(GAMMA_CONTROL["preprocess_path"], "scaleAC.pt"),
+        description="Control scale file:", style=_LABEL_STYLE, layout=_wide())
+    ss_trend_target_year = w.FloatText(
+        value=0.0, description="Target year (0 = record's last year):", style=_LABEL_STYLE)
     ss_gen_output = w.Output()
     ss_gen_button = w.Button(description="Generate Shape/Scale Files", button_style="warning")
 
@@ -577,14 +594,17 @@ def build_and_display_ui(project_root):
         is_control_fit = mode == "Fit new: Control period"
         is_composite = mode == "Fit new: Composite (e.g. El Nino)"
         is_mjo = mode == "Fit new: MJO composite"
+        is_trend = mode == "Fit new: Trend"
         is_default = mode == SS_GEN_MODES[0]
         for widget in (ss_precip_glob, ss_precip_varname, ss_start_date, ss_end_date):
-            widget.layout.display = "" if (is_control_fit or is_composite or is_mjo) else "none"
-        ss_scale_qc_max.layout.display = "" if (is_composite or is_mjo) else "none"
+            widget.layout.display = "" if (is_control_fit or is_composite or is_mjo or is_trend) else "none"
+        ss_scale_qc_max.layout.display = "" if (is_composite or is_mjo or is_trend) else "none"
         ss_composite_years.layout.display = "" if is_composite else "none"
         for widget in (ss_mjo_omi_index_path, ss_mjo_phase, ss_mjo_amplitude_threshold,
                        ss_mjo_lag_before, ss_mjo_lag_after):
             widget.layout.display = "" if is_mjo else "none"
+        for widget in (ss_trend_control_shape_path, ss_trend_control_scale_path, ss_trend_target_year):
+            widget.layout.display = "" if is_trend else "none"
         ss_gen_button.layout.display = "none" if is_default else ""
         if is_default:
             r_heating_name.value = GAMMA_CONTROL["heating_name"]
@@ -753,6 +773,25 @@ def build_and_display_ui(project_root):
                         season_months=_MJO_SEASON_MONTHS,
                         precip_cache_dir=a_precip_cache_dir.value or None,
                     )
+                elif mode == "Fit new: Trend":
+                    if not (ss_start_date.value and ss_end_date.value):
+                        raise ValueError("Fit start/end date required (precip trend fitting window).")
+                    if not (ss_trend_control_shape_path.value and ss_trend_control_scale_path.value):
+                        raise ValueError("Control shape/scale file paths are required -- the trend "
+                                          "delta is added onto an existing control's heating.")
+                    fit_gamma_shape_scale_trend(
+                        precip_glob=ss_precip_glob.value,
+                        precip_varname=ss_precip_varname.value,
+                        date_range=(str(ss_start_date.value), str(ss_end_date.value)),
+                        zw=a_zw.value,
+                        output_dir=r_preprocess_path.value,
+                        name=r_heating_name.value,
+                        control_shape_path=ss_trend_control_shape_path.value,
+                        control_scale_path=ss_trend_control_scale_path.value,
+                        target_year=(ss_trend_target_year.value or None),
+                        scale_qc_max=ss_scale_qc_max.value,
+                        precip_cache_dir=a_precip_cache_dir.value or None,
+                    )
                 else:
                     if not (ss_start_date.value and ss_end_date.value):
                         raise ValueError("Fit start/end date required.")
@@ -826,6 +865,7 @@ def build_and_display_ui(project_root):
             ss_composite_years,
             ss_mjo_omi_index_path, ss_mjo_phase, ss_mjo_amplitude_threshold,
             ss_mjo_lag_before, ss_mjo_lag_after,
+            ss_trend_control_shape_path, ss_trend_control_scale_path, ss_trend_target_year,
             ss_gen_button, ss_gen_output,
         ],
         layout=_group_box(),

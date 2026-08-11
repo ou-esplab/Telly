@@ -40,3 +40,7 @@ toffset: 54750
 control_experiment: null   # this IS the control
 spinup_days: 60
 plot_vars: [vvel, uvel, geo]
+plot_levels_hpa:
+- 200
+- 500
+- 850

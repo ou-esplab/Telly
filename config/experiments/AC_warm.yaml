@@ -33,3 +33,7 @@ toffset: 2160
 control_experiment: null
 spinup_days: 60
 plot_vars: [vvel, uvel, geo]
+plot_levels_hpa:
+- 200
+- 500
+- 850

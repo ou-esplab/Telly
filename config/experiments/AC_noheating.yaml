@@ -33,3 +33,7 @@ toffset: 0
 control_experiment: AC_Test
 spinup_days: 60
 plot_vars: [vvel, uvel, geo]
+plot_levels_hpa:
+- 200
+- 500
+- 850

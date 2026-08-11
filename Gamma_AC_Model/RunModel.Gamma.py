@@ -3,9 +3,19 @@
 
 # In[1]:
 
+# Must be set before numpy/torch are imported -- MKL/OpenMP size their native
+# thread pools once at first import, so setting these afterward (e.g. via
+# subs1_utils.py's own copy of these same lines, imported below) has no
+# effect. Capped at 4 (not left at the default of all-cores) so several
+# gamma_ac experiments can run concurrently on this machine without CPU
+# thread oversubscription -- see EXPERIMENTS.md.
+import os
+os.environ["OMP_NUM_THREADS"] = "4"
+os.environ["MKL_NUM_THREADS"] = "4"
+os.environ["OPENBLAS_NUM_THREADS"] = "4"
+os.environ["NUMEXPR_NUM_THREADS"] = "4"
 
 import numpy as np
-import os
 import torch
 import subprocess
 import sys
@@ -16,8 +26,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from subs1_utils import *
 import multiprocessing
-from dask.distributed import Client
-from dask.distributed import LocalCluster
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -31,9 +39,6 @@ def main():
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()  # Required for Windows/PyInstaller
-
-    cluster = LocalCluster()
-    print(cluster)
 
     # Parse commend line arguments
     parser = argparse.ArgumentParser()

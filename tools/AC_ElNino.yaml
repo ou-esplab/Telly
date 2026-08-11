@@ -2,13 +2,13 @@ model_type: gamma_ac
 start_year: 1994
 end_year: 2024
 season: annual
-heating_name: MJO_Phase45
+heating_name: Composite_ElNino
 preprocess_path_override: /data/esplab/kpegion/projects/AGCM/AnnualCycle
 experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
-experiment_name: AC_MJO45
-run_length_days: 3660
+experiment_name: AC_ElNino
+run_length_days: 1735
 cold_start: false
-toffset: 3630
+toffset: 90
 control_experiment: AC_Test
 spinup_days: 60
 plot_vars:
@@ -25,10 +25,6 @@ zw: 63
 kmax: 26
 chunk_size_days: 30
 compute_slp: false
-shape_file_override: shape_MJO_Phase45.pt
-scale_file_override: scale_MJO_Phase45.pt
+shape_file_override: shape_Composite_ElNino.pt
+scale_file_override: scale_Composite_ElNino.pt
 diagnostic_heating_source: cmap_default
-plot_levels_hpa:
-- 200
-- 500
-- 850
