@@ -1,6 +1,6 @@
 # Telly — Atmospheric Teleconnection Model
 
-This repository is the OU ESPLab fork of the Atmospheric Teleconnection Model (ATM), a
+This repository is the OU ESPLab fork of the Atmospheric Teleconnection Model (Telly), a
 simplified-physics atmospheric general circulation model for idealized climate dynamics studies.
 It tracks the upstream model but adds a config-driven pipeline and a form-based Jupyter UI
 (`tools/Configure_and_Run_Experiment.ipynb`) for running experiments without hand-editing notebooks
@@ -173,6 +173,5 @@ confirms the pipeline didn't crash and produced files.
 ## Troubleshooting
 
 For issues, questions, or concerns about the model itself, see the
-[original repository](https://github.com/jsb288/Atmospheric-Teleconnection-Model) or contact Ben
-Kirtman at bkirtman@miami.edu. For issues specific to this fork's pipeline or tools, open an issue
+[original repository](https://github.com/jsb288/Atmospheric-Teleconnection-Model).  For issues specific to this fork's pipeline or tools, open an issue
 on [this repository](https://github.com/ou-esplab/Telly).
