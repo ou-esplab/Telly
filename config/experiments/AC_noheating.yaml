@@ -1,4 +1,12 @@
-# Gamma_AC no-heating experiment — not yet run (directory exists but empty)
+# Gamma_AC no-heating experiment.
+#
+# Status: initial 1825-day (5-yr) run completed 2026-08-12. Extended
+# 2026-08-18 to the same 7290-day (20-yr) target as AC_ElNino/AC_LaNina/
+# AC_Trend/AC_MJO* -- the wxregimes ERA5-regime-matching analysis found the
+# 5-yr composite had the weakest (though still real, non-spurious) ERA5
+# correlation of any experiment, consistent with EXPERIMENTS.md's documented
+# finding that short Gamma_AC runs are a noisy climatological sample; this
+# extension tests whether more data closes that gap.
 #
 # IMPORTANT: before this fix, running this config through
 # scripts/02_run_model.py would have silently used the control gamma
@@ -26,9 +34,9 @@ preprocess_root: /data/esplab/kpegion/projects/AGCM/AnnualCycle
 shape_file_override: shape_noheating.pt
 scale_file_override: scale_noheating.pt
 
-run_length_days: 2160
-cold_start: true
-toffset: 0
+run_length_days: 7290
+cold_start: false
+toffset: 1825
 
 control_experiment: AC_Test
 spinup_days: 60

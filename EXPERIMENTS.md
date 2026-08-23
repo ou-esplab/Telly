@@ -384,7 +384,7 @@ period.  Output is post-processed annually by `PressureInterpMetPy.py` (one
 |----------------|-----------------|----------|----------------------|
 | `AC_Test` | `shapeAC.pt`, `scaleAC.pt` | **54750** (150 yrs) | `geo_Pressure.nc` (all years); `geo_Pressure_days_1-6540.nc`, `_days_1-18240.nc`; ~122 annual geo files |
 | `AC_warm` | `shapeAC_Warm.pt`, `scaleAC_Warm.pt` | **2160** (6 yrs) | `geo_Pressure_days_1-2160.nc`, `uvel_Pressure_days_1-2160.nc`, `vvel_Pressure_days_1-2160.nc` |
-| `AC_noheating` | `shape_noheating.pt`, `scale_noheating.pt` | **0** (not yet run) | — |
+| `AC_noheating` | `shape_noheating.pt`, `scale_noheating.pt` | **9115** (~25 yrs) | 303 `geo_Pressure`/`uvel_Pressure`/`vvel_Pressure`/`temp_Pressure` chunks each (`*_1950-01-01_1950-01-30.nc`–`*_1974-11-16_1974-12-15.nc`); 18 mean/diff figures in `figures/` |
 | `AC_ElNino` | `shape_Composite_ElNino.pt`, `scale_Composite_ElNino.pt` | **7290** (20 yrs) | 243 `temp_Pressure_*.nc` chunks; 24 mean/diff figures in `figures/` |
 | `AC_LaNina` | `shape_Composite_LaNina.pt`, `scale_Composite_LaNina.pt` | **7290** (20 yrs) | 243 `temp_Pressure_*.nc` chunks; 24 mean/diff figures in `figures/` |
 | `AC_MJO81` | `shape_MJO_Phase81.pt`, `scale_MJO_Phase81.pt` | **7290** (20 yrs) | 243 `temp_Pressure_*.nc` chunks; 24 mean/diff figures in `figures/` |
@@ -496,6 +496,45 @@ reading `shape_file_override`/`scale_file_override` from the config).
 ```bash
 python scripts/02_run_model.py --config config/experiments/AC_noheating.yaml
 ```
+
+**Status (2026-08-12): initial 1825-day (5-yr) run complete.** The run finished
+1825 days (5 simulated years, 1950-01-01–1954-12-05), postprocessing produced
+60/60 chunks each for `geo`/`uvel`/`vvel`/`temp` Pressure files, and all 18
+mean/diff diagnostic figures were generated. `config/experiments/
+AC_noheating.yaml`'s `run_length_days` was lowered from 2160 to 1825 for this
+run — shorter than `AC_warm`'s nominal 2160 but enough to clear the ~60-day
+spin-up transient discussed below several times over.
+
+**Extended 2026-08-18–2026-08-22.** The `wxregimes` project's ERA5-regime-
+matching analysis found the 5-yr composite had the weakest (though still
+real, non-spurious) ERA5 pattern correlation of any Gamma_AC experiment
+(mean r=0.64 vs. 0.68-0.78 for the others), consistent with the spin-up/
+sampling discussion below — motivation to extend it to the same ~20-year
+scale as `AC_ElNino`/`AC_LaNina`/`AC_Trend`/`AC_MJO*`. Edited
+`run_length_days: 7290`, `cold_start: false`, `toffset: 1825` and re-ran
+`02_run_model.py` → `03_postprocess.py` → `04_plot_results.py` in a `screen`
+session on `esplab-0-2` (initially launched on `esplab-0-3`, moved before any
+output had been written to spread shared-machine load).
+
+**Overshot the intended target**: `run_length_days` is the number of *new*
+days to integrate this invocation, not the new cumulative total (confirmed
+against `AC_ElNino.yaml`'s own `run_length_days: 3660`/`toffset: 3630`,
+which sum to exactly its documented 7290-day total) — the same
+misunderstanding this file already warns about via the `toffset`
+instructions above; this is a second, independent confirmation of that
+semantics, this time caught only after the run. With `toffset: 1825` already
+completed, `run_length_days: 7290` integrated 7290 *additional* days, for a
+final total of **9115 days (~25 simulated years, ending 1974-12-15)** rather
+than the intended 7290-day (20-yr) match. No errors occurred and the extra
+~5 years of output aren't a scientific problem for this control-type
+baseline (larger sample, same distribution) — just a record-length mismatch
+against the other experiments' shared 20-yr convention if one is doing a
+strict apples-to-apples comparison. Re-running `wxregimes`'s clustering/
+composite pipeline on the extended record raised `AC_noheating`'s mean ERA5
+correlation from 0.64 to 0.70 (min 0.53 to 0.63), moving it from
+second-weakest to mid-pack among the 12 experiments — supporting the
+hypothesis that the original gap was substantially small-sample noise from
+the short 5-yr record, not primarily a "no heating" physical signal.
 
 **Spin-up transient and why short runs look "wrong" next to `AC_Test`**: investigated live
 comparing a fresh 30-day `gamma_ac` test run (`AC_Cntrl`, same `heating_name: Test` and
@@ -731,5 +770,4 @@ MJO composites above.**
 | `T63L26_JJA_Cluster*_SE` | Only 60 days; needs extension to 720 days |
 | `T63L26_DJF_ALL2_1999-2020` | `uvel` pressure file covers only days 1-60; needs full 720-day postprocess |
 | `T63L26_JJA_Cluster*_ANA_1979-2023` | Only `vvel` postprocessed; missing `uvel` and `geo` |
-| `AC_noheating` | Not yet run |
 | `AC_Test` | Only `geo` postprocessed (partially); `uvel` and `vvel` missing |
