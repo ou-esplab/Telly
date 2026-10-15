@@ -44,6 +44,14 @@ heating_source: cesm2        # cca | cesm2 | era5 | custom
 shape_file_override: shapeAC_Warm.pt
 scale_file_override: scaleAC_Warm.pt
 
+# --- Surface ---
+# topography: real | flat ; basic_state: observed | observed_sealevel | zonal_mean | landsea_contrast
+# (defaults: real / observed). Non-observed basic states use "<preprocess dir>_<basic_state>"
+# (plus "_realtopo" with real topography).
+# See config/experiments/AC_SW_*.yaml for the stationary-wave teaching set.
+# topography: real
+# basic_state: observed
+
 # --- Paths ---
 input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data   # [default]
 preprocess_root: /data/esplab/kpegion/projects/AGCM/AnnualCycle

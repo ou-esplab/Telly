@@ -20,6 +20,31 @@ kmax: 26
 experiment_root: /data/esplab/kpegion/projects/AGCM_Experiments
 input_data_path: /data/esplab/kpegion/projects/AGCM/MultiThread_Model/input_data
 
+# --- Surface boundary conditions (gamma_ac only) ---
+# Two independent switches (see EXPERIMENTS.md, "Stationary-wave experiments"):
+#   topography : real | flat        PHIS the model reads (flat = sea level, PHIS = 0)
+#   basic_state: observed           observed NCEP climatology (relaxation targets already
+#                                   contain the observed stationary waves)
+#                observed_sealevel  observed asymmetries, ln(ps)/surface T at sea level
+#                zonal_mean         zonally symmetric (sea-level) state, no land
+#                landsea_contrast   zonal_mean + land-masked observed T asymmetry in the
+#                                   temperature relaxation target only
+# Non-observed basic states use a separate "<preprocess dir>_<basic_state>" directory, with
+# a "_realtopo" suffix when topography is real (surface pressure and sigma-level fields
+# must sit on the terrain; see EXPERIMENTS.md).
+# Legacy preset surface_mode sets both: realistic = (real, observed),
+# flat_topography = (flat, observed_sealevel), aquaplanet = (flat, zonal_mean);
+# explicit topography/basic_state keys override it.
+surface_mode: realistic
+
+# --- Topography and land-sea mask (gamma_ac; local files, always used) ---
+# topography_file: gridded surface geopotential PHIS (m^2/s^2), variable "topog".
+# land_sea_mask_file: ERA5 land-sea mask (variable "lsm"), used for the land mask and to
+# zero the small ocean ripples in the (spectrally smoothed) topography file.
+# (The JISAO elevation server this used to download from no longer exists.)
+topography_file: /data/esplab/shared/geographic/topo/topog.gridded0.5.nc
+land_sea_mask_file: /data/esplab/shared/reanalysis/era5/land_sea_mask.nc
+
 # --- Heating ---
 heating_source: custom
 

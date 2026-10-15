@@ -31,6 +31,12 @@ Usage (CLI):
     python scripts/generate_shape_scale.py --noheating --zw 63 \\
         --output-dir /path/to/preprocess/dir --name MyNoHeating
 
+    # Zonally symmetric version of the control (aquaplanet heating):
+    python scripts/generate_shape_scale.py --zonal-mean --zw 63 \\
+        --control-shape-path /path/to/preprocess/dir/shapeAC.pt \\
+        --control-scale-path /path/to/preprocess/dir/scaleAC.pt \\
+        --output-dir /path/to/preprocess/dir --name ZonalMean
+
     # Trend-only fit -- adds the CMORPH precip trend, evaluated at target-year
     # relative to the record's own mean year, onto an existing control's
     # shape/scale (see fit_gamma_shape_scale_trend's docstring for why the
@@ -795,6 +801,45 @@ def zero_shape_scale(output_dir, name, zw, make_diagnostic_plot=True):
     return z, z
 
 
+def zonal_mean_shape_scale(output_dir, name, control_shape_path, control_scale_path,
+                           zw, make_diagnostic_plot=True):
+    """
+    Zonally symmetric version of an existing shape/scale pair (e.g. for aquaplanet
+    runs). Averaging shape and scale directly would not preserve the rainfall
+    statistics, so instead the gamma mean (k*theta) and variance (k*theta^2) are
+    averaged around each latitude circle for every day and the parameters
+    re-derived by moment matching:  k = mean^2/var,  theta = var/mean.
+    This preserves the zonal-mean rainfall and mean variance of the source.
+    Points with zero zonal-mean rainfall get shape = scale = 0 (no heating draw).
+    """
+    shape = torch.as_tensor(torch.load(control_shape_path, weights_only=False)).double()
+    scale = torch.as_tensor(torch.load(control_scale_path, weights_only=False)).double()
+    mean = shape * scale
+    var = shape * scale ** 2
+    mean_zm = mean.mean(dim=-1, keepdim=True).expand_as(mean)
+    var_zm = var.mean(dim=-1, keepdim=True).expand_as(var)
+    ok = (mean_zm > 0.0) & (var_zm > 0.0)
+    safe_mean = torch.where(ok, mean_zm, torch.ones_like(mean_zm))
+    safe_var = torch.where(ok, var_zm, torch.ones_like(var_zm))
+    new_shape = torch.where(ok, safe_mean ** 2 / safe_var, torch.zeros_like(mean_zm)).contiguous()
+    new_scale = torch.where(ok, safe_var / safe_mean, torch.zeros_like(mean_zm)).contiguous()
+
+    mw, jmax, imax = build_grid_params({"zw": zw})
+    lats, lons, _ = _build_grid(jmax, imax)
+    os.makedirs(output_dir, exist_ok=True)
+    shape_path = os.path.join(output_dir, f"shape_{name}.pt")
+    scale_path = os.path.join(output_dir, f"scale_{name}.pt")
+    # Saved as numpy float64, matching the existing control shapeAC.pt/scaleAC.pt.
+    new_shape, new_scale = new_shape.numpy(), new_scale.numpy()
+    torch.save(new_shape, shape_path)
+    torch.save(new_scale, scale_path)
+    print(f"  Saved {shape_path}")
+    print(f"  Saved {scale_path}")
+    if make_diagnostic_plot:
+        _save_diagnostic_plot(output_dir, name, lats, lons, new_shape, new_scale)
+    return new_shape, new_scale
+
+
 def _parse_window(s):
     start, end = s.split(":")
     return (start, end)
@@ -819,10 +864,15 @@ def main():
     parser.add_argument("--trend", action="store_true",
                          help="Fit a trend-only delta onto an existing control's shape/scale "
                               "(requires --control-shape-path/--control-scale-path)")
+    parser.add_argument("--zonal-mean", action="store_true",
+                         help="Write a zonally symmetric version of an existing shape/scale pair "
+                              "(for aquaplanet runs; requires --control-shape-path/--control-scale-path)")
     parser.add_argument("--control-shape-path", default=None,
-                         help="Existing control shape_*.pt to add the trend delta onto (--trend)")
+                         help="Existing shape_*.pt to add the trend delta onto (--trend) or to "
+                              "zonally average (--zonal-mean)")
     parser.add_argument("--control-scale-path", default=None,
-                         help="Existing control scale_*.pt to add the trend delta onto (--trend)")
+                         help="Existing scale_*.pt to add the trend delta onto (--trend) or to "
+                              "zonally average (--zonal-mean)")
     parser.add_argument("--target-year", type=float, default=None,
                          help="Year the trend delta is evaluated at (--trend). Defaults to the "
                               "last year of --end-date. See fit_gamma_shape_scale_trend's "
@@ -841,8 +891,16 @@ def main():
                           make_diagnostic_plot=not args.no_diagnostic_plot)
         return
 
+    if args.zonal_mean:
+        if not (args.control_shape_path and args.control_scale_path):
+            parser.error("--zonal-mean requires --control-shape-path and --control-scale-path")
+        zonal_mean_shape_scale(args.output_dir, args.name, args.control_shape_path,
+                               args.control_scale_path, args.zw,
+                               make_diagnostic_plot=not args.no_diagnostic_plot)
+        return
+
     if not (args.precip_glob and args.start_date and args.end_date):
-        parser.error("--precip-glob, --start-date, and --end-date are required unless --noheating")
+        parser.error("--precip-glob, --start-date, and --end-date are required unless --noheating or --zonal-mean")
 
     if args.trend:
         if not (args.control_shape_path and args.control_scale_path):

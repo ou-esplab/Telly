@@ -125,6 +125,24 @@ def build_and_display_ui(project_root):
     r_end_year = w.IntText(value=FIXED_CONTROL["end_year"], description="End yr:", style=_LABEL_STYLE)
     r_preprocess_path = w.Text(value=FIXED_CONTROL["preprocess_path"],
                                 description="Preprocess dir:", placeholder="path to base climatology .pt files", style=_LABEL_STYLE, layout=_wide())
+    TOPOGRAPHY_OPTIONS = [("Real topography", "real"),
+                          ("Flat (sea level, PHIS = 0)", "flat")]
+    BASIC_STATE_OPTIONS = [
+        ("Observed (observed NCEP climatology)", "observed"),
+        ("Observed asymmetries, sea-level ps", "observed_sealevel"),
+        ("Zonal mean (no land, zonally symmetric)", "zonal_mean"),
+        ("Land-sea contrast (zonal mean + land-masked T asymmetry)", "landsea_contrast"),
+    ]
+    r_topography = w.Dropdown(options=TOPOGRAPHY_OPTIONS, value="real",
+                              description="Topography:", style=_LABEL_STYLE, layout=_wide())
+    r_basic_state = w.Dropdown(options=BASIC_STATE_OPTIONS, value="observed",
+                               description="Basic state:", style=_LABEL_STYLE, layout=_wide())
+    r_surface_note = w.HTML(
+        "<i>(gamma_ac only) Non-observed basic states read and write a separate "
+        "<code>&lt;Preprocess dir&gt;_&lt;basic state&gt;</code> directory (suffix added "
+        "automatically; <code>_realtopo</code> is added with real topography); run Preprocess to build it. Shape/scale files are linked in from the "
+        "Preprocess dir above. Flat topography needs a non-observed basic state. For the "
+        "stationary-wave teaching set use the AC_SW_* configs (see EXPERIMENTS.md).</i>")
     r_run_length_days = w.IntText(value=30, description="Run length (days):", style=_LABEL_STYLE)
     r_cold_start = w.Checkbox(value=True, description="Cold start", style=_LABEL_STYLE)
     r_toffset = w.IntText(value=0, description="Restart offset (days):", style=_LABEL_STYLE)
@@ -669,6 +687,12 @@ def build_and_display_ui(project_root):
         r_season.layout.display = "" if is_fixed else "none"
         r_shape_file.layout.display = "none" if is_fixed else ""
         r_scale_file.layout.display = "none" if is_fixed else ""
+        r_topography.layout.display = "none" if is_fixed else ""
+        r_basic_state.layout.display = "none" if is_fixed else ""
+        r_surface_note.layout.display = "none" if is_fixed else ""
+        if is_fixed:
+            r_topography.value = "real"
+            r_basic_state.value = "observed"
         heating_gen_box.layout.display = "" if is_fixed else "none"
         ss_gen_box.layout.display = "none" if is_fixed else ""
         if is_fixed:
@@ -987,6 +1011,9 @@ def build_and_display_ui(project_root):
             if a_heating_file_override.value:
                 cfg["heating_file_override"] = a_heating_file_override.value
         else:
+            if r_topography.value != "real" or r_basic_state.value != "observed":
+                cfg["topography"] = r_topography.value
+                cfg["basic_state"] = r_basic_state.value
             if r_shape_file.value:
                 cfg["shape_file_override"] = r_shape_file.value
             if r_scale_file.value:
@@ -1125,6 +1152,7 @@ def build_and_display_ui(project_root):
         w.HTML("<b>Configure &amp; Run Experiment</b>"),
         r_model_type, r_experiment_root, r_experiment_name,
         r_season, r_start_year, r_end_year, r_preprocess_path,
+        r_topography, r_basic_state, r_surface_note,
         r_run_length_days, r_cold_start, r_toffset, r_toffset_status,
         heating_gen_box, ss_gen_box, r_shape_file, r_scale_file,
         postprocessing_box,

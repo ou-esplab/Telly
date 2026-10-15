@@ -29,7 +29,7 @@ import pandas as pd
 import torch
 import yaml
 
-from _config import load_config, build_preprocess_path, build_experiment_path
+from _config import load_config, build_preprocess_path, build_experiment_path, topography_file
 
 
 # ---------------------------------------------------------------------------
@@ -273,7 +273,8 @@ def run_gamma_ac(cfg, preprocess_path, datapath):
            "--kmax", str(cfg["kmax"]),
            "--tl",   str(cfg["chunk_size_days"]),
            "--shapefile", shape_file,
-           "--scalefile", scale_file]
+           "--scalefile", scale_file,
+           "--topogfile", topography_file(cfg)]
     print(f"  Running: {' '.join(cmd)}")
     subprocess.run(cmd, check=True, cwd=os.path.join(project_root, "Gamma_AC_Model"))
 

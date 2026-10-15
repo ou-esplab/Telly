@@ -82,6 +82,12 @@ fields:
   rather than silently producing a partial-year result. On success, the **Shape file**/**Scale
   file** fields below auto-populate with the freshly generated files.
 
+For `gamma_ac`, **Topography** (real / flat) and **Basic state** (observed / observed with sea-level ps /
+zonal mean / land-sea contrast) dropdowns switch the surface boundary conditions. Non-observed basic states
+build and use a separate `<Preprocess dir>_<basic state>` directory. The `AC_SW_*` experiment set
+(mountains, land-sea contrast, diabatic heating added one at a time to a zonally symmetric baseline) and
+`scripts/stationary_waves.py` for comparing them are described in EXPERIMENTS.md.
+
 Below the generation panel, curated widgets cover the rest of the config fields that vary per
 experiment (your own `experiment_root`/`experiment_name`, run length, cold_start/toffset, control
 experiment, plot vars), with rarely-touched advanced fields collapsed and defaulted. A "Build

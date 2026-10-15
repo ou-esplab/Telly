@@ -30,7 +30,7 @@ import numpy as np
 import xarray as xr
 import yaml
 
-from _config import load_config, build_preprocess_path, build_experiment_path
+from _config import load_config, build_preprocess_path, build_experiment_path, topography_file
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +133,8 @@ def pressure_interp(datapath, zw, kmax, jmax, imax,
 # Sea-level pressure
 # ---------------------------------------------------------------------------
 
-def compute_slp(datapath, preprocess_path, zw, kmax, jmax, imax, mw, model_type):
+def compute_slp(datapath, preprocess_path, zw, kmax, jmax, imax, mw, model_type,
+                topog_name="topog.spectral.pt"):
     """
     Derives sea-level pressure from model surface pressure, near-surface
     temperature, and topography using the ECMWF hydrostatic formula, one raw
@@ -158,7 +159,7 @@ def compute_slp(datapath, preprocess_path, zw, kmax, jmax, imax, mw, model_type)
         jmax, imax, lmax=mw, mmax=zw, grid="legendre-gauss", csphase=False
     )
     topog_spec = torch.load(
-        os.path.join(preprocess_path, "topog.spectral.pt"), weights_only=False
+        os.path.join(preprocess_path, topog_name), weights_only=False
     )
     phi = disht(topog_spec).numpy()      # geopotential of terrain (m²/s²)
 
@@ -269,7 +270,8 @@ def main():
                         pvars, fieldnames, plev_hpa)
 
     if cfg.get("compute_slp", False):
-        compute_slp(datapath, preprocess_path, zw, kmax, jmax, imax, mw, model_type)
+        compute_slp(datapath, preprocess_path, zw, kmax, jmax, imax, mw, model_type,
+                    topog_name=topography_file(cfg))
 
     print(f"\nPost-processing complete. Output in: {datapath}")
 

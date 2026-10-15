@@ -128,6 +128,97 @@ state files (topography, climatological winds, temperature, surface pressure) ar
 identical across sensitivity runs that differ only in heating.  Only the
 `heat*.pt` file changes.
 
+#### Stationary-wave experiments: mountains, land-sea contrast, diabatic heating (gamma_ac only)
+
+Teaching set showing how three forcings generate stationary Rossby waves. Why it
+is built this way: `damp_test` relaxes vorticity, divergence (150 d), temperature
+and ln(ps) (40 d) toward the climatology, and the *observed* climatology already
+contains the observed stationary waves. A run that keeps the observed basic state
+is therefore pulled toward the answer, so the experiments use a zonally symmetric
+basic state and switch each forcing on separately.
+
+Three independent switches in the experiment config (defaults: `real` / `observed`,
+so existing experiments are unchanged):
+
+| key | values | meaning |
+|---|---|---|
+| `topography` | `real`, `flat` | PHIS (surface geopotential) the model reads: real topography, or all zeros (sea level). Chosen at run time via `RunModel.Gamma.py --topogfile`. |
+| `basic_state` | `observed` | observed NCEP climatology (`AnnualCycle/`) |
+| | `observed_sealevel` | observed asymmetries, but ln(ps) from NCEP sea-level pressure and surface T reduced to sea level (balanced with PHIS = 0) |
+| | `zonal_mean` | sea-level state, zonally averaged: no land, no zonal asymmetry |
+| | `landsea_contrast` | `zonal_mean` plus the observed T departure from the zonal mean over (smoothed) land, in the temperature relaxation target only, with the masked departure's own zonal mean removed so the zonal-mean state equals `zonal_mean`'s (land cold / ocean slightly warm in winter, reversed in summer, from the monthly climatology; full strength at and below 300 hPa, tapered linearly to zero at 100 hPa because stratospheric asymmetries are a response to tropospheric wave forcing, not a land-sea effect); winds, vorticity, divergence and ps targets stay zonal. |
+| shape/scale files | `shape_file_override`/`scale_file_override` | diabatic heating: observed `shapeAC/scaleAC` or the zonally symmetric `shape_ZonalMean/scale_ZonalMean` |
+
+(`flat` with `observed` is rejected: PHIS = 0 on top of the observed surface
+pressure, which carries the mountain signal, leaves the basic state unbalanced.
+The legacy `surface_mode` key is kept as a preset: `realistic` = real/observed,
+`flat_topography` = flat/observed_sealevel, `aquaplanet` = flat/zonal_mean.)
+
+Experiment set (`config/experiments/AC_SW_*.yaml`), each forcing added to the
+zonally symmetric baseline, plus all three on:
+
+| run | topography | basic_state | heating | forcing added |
+|---|---|---|---|---|
+| `AC_SW_base` | flat | zonal_mean | ZonalMean | none (baseline) |
+| `AC_SW_mtn` | real | zonal_mean | ZonalMean | mountains |
+| `AC_SW_landsea` | flat | landsea_contrast | ZonalMean | land-sea contrast |
+| `AC_SW_heat` | flat | zonal_mean | observed | diabatic heating |
+| `AC_SW_all` | real | landsea_contrast | observed | all three (reference) |
+
+A forcing's stationary-wave response is its run minus `AC_SW_base`. The all-on run
+minus the sum of the three single-factor responses shows the nonlinearity. The
+existing observed-basic-state run `AC_Test` is kept only to show how well the
+idealized all-on run reproduces the observed stationary waves.
+
+Non-observed basic states use their own preprocess directories (suffix added
+automatically by `_config.build_preprocess_path`, including to
+`preprocess_path_override`), so the shared observed files are never overwritten:
+
+| run | preprocess directory |
+|---|---|
+| `base`, `heat` | `<dir>_zonal_mean` |
+| `landsea` | `<dir>_landsea_contrast` |
+| `mtn` | `<dir>_zonal_mean_realtopo` |
+| `all` | `<dir>_landsea_contrast_realtopo` |
+
+Real topography needs its own directory because the surface pressure and every
+sigma-level field must sit on the terrain: the (zonal) sea-level pressure is reduced
+to the actual surface height (constant 6.5 K/km lapse rate), and u, v, T, vorticity
+and divergence are interpolated to sigma with that surface pressure. Placing real
+PHIS on a sea-level (~1010 hPa) surface pressure instead is hydrostatically
+unbalanced -- the first version of the `mtn`/`all` runs went to NaN everywhere on
+day 1 (Tibet at ~560 hPa vs a 1010 hPa target). The terrain therefore appears in
+the relaxation targets only as this hydrostatic consequence of having terrain
+(a mountain-shaped surface pressure and sigma-surface structure), not as the wave
+response. Each directory holds real PHIS in `topog.spectral.pt` and zeros in
+`topog_flat.spectral.pt`, and `01_preprocess.py` symlinks the `shape*`/`scale*`/`heat*`
+`.pt` files in from the observed directory. `scripts/generate_shape_scale.py --zonal-mean` makes the
+zonally symmetric heating (averages the gamma mean k*theta and variance k*theta^2
+around each latitude circle per day and re-derives shape/scale by moment
+matching, preserving zonal-mean rainfall and variance).
+
+Workflow:
+
+```
+for r in base mtn landsea heat all; do
+    python scripts/run_pipeline.py --config config/experiments/AC_SW_$r.yaml   # preprocess, run, postprocess, plot
+done
+python scripts/stationary_waves.py --experiment-root <experiment_root> \
+    --runs AC_SW_base AC_SW_mtn AC_SW_landsea AC_SW_heat AC_SW_all --obs AC_Test \
+    --season DJF --level 200
+```
+
+`stationary_waves.py` plots the seasonal-mean stationary eddy z* (geopotential
+height minus its zonal mean) of every run and each response, and prints each run's
+RMS z* next to a sampling-noise estimate from the two halves of the record (the
+gamma heating is stochastic, so use ~20-year runs; a response well above the noise
+estimate is a real signal). Use `run_length_days: 60` for a first stability test.
+
+Caveats: NCEP pressure-level data below ground over mountains are extrapolated, so
+near-surface winds/T over former mountain regions are less reliable. The land-masked
+asymmetry deliberately drops ocean-only asymmetries (warm pool, Gulf Stream); the
+heating factor carries the tropical ocean signal.
+
 **`AGCM_Experiments/` — outputs (written during a run)**
 
 Each experiment gets its own subdirectory named after the config parameters.

@@ -52,6 +52,7 @@ if __name__ == '__main__':
     parser.add_argument("--tl",nargs='?',type=int,default=30,help="chunk size in days")
     parser.add_argument("--shapefile",nargs='?',default="shapeAC.pt",help="gamma-distribution shape parameter filename, read from prepath (default: shapeAC.pt, the control)")
     parser.add_argument("--scalefile",nargs='?',default="scaleAC.pt",help="gamma-distribution scale parameter filename, read from prepath (default: scaleAC.pt, the control)")
+    parser.add_argument("--topogfile",nargs='?',default="topog.spectral.pt",help="surface-geopotential (PHIS) filename, read from prepath (default: topog.spectral.pt; topog_flat.spectral.pt is all zeros)")
     args = parser.parse_args()
 
     expstub=args.expname
@@ -250,13 +251,10 @@ if __name__ == '__main__':
  #                        is desired see preprocess for how to
  #                        convert to spectral. 
  #
- # Setting topography to zero here
+ # Topography file is selectable (--topogfile): topog.spectral.pt is the real
+ # topography, topog_flat.spectral.pt is all zeros (sea level everywhere).
  #
- ###phismn = torch.zeros((mw,zw),dtype=torch.complex128)
- #
- # If non-zero topog read here
- #
-    phismn = torch.load(prepath+'topog.spectral.pt')
+    phismn = torch.load(prepath+args.topogfile)
  #
  #
  # Read shape and scale for gamma rainfall distribution
