@@ -1,0 +1,20 @@
+<section id="eq-vort-div" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Telly: Vorticity and Divergence</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:22px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:36px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;line-height:1.35"><span style="color:#14233A">∂ζ/∂t = −∇·(ηV)</span> <span style="color:#14707C">− R k·(∇T × ∇ln ps) − (ζ − ζref)/τ + smoothing</span></p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;line-height:1.35"><span style="color:#14707C">∂D/∂t = k·∇×(ηV) − ∇²(</span><span style="color:#B8501A">Φ</span><span style="color:#14707C"> + ½V·V) − R ∇·(T ∇ln ps) − (D − Dref)/τ + smoothing</span></p>
+</div>
+<div style="display:flex;gap:56px;align-items:center">
+<p style="font-size:28px;color:#14233A"><span style="color:#14233A;font-size:28px">■</span> from class</p>
+<p style="font-size:28px;color:#14233A"><span style="color:#14707C">■</span> added in Telly</p>
+<p style="font-size:28px;color:#14233A"><span style="color:#B8501A">■</span> forcing</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:32px;line-height:1.4;width:1500px">The first term is steps 1 and 2 together. Divergence D now has its own equation: it is how Telly follows columns stretching and squeezing.</p>
+<p style="font-size:32px;line-height:1.4;width:1500px">The height Φ includes the ground height Φs, so terrain pushes on D.</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Some vertical terms are left out of this view · Telly · stationary Rossby waves</p>
+</section>

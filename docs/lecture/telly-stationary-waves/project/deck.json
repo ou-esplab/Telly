@@ -1,0 +1,102 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-14T14:10:00Z"
+  },
+  "lists": "css",
+  "title": "Telly Lecture: Stationary Waves",
+  "cover": "cover",
+  "order": [
+    "cover",
+    "roadmap",
+    "sec-obs",
+    "obs-map",
+    "obs-count",
+    "obs-why",
+    "sec-class",
+    "class-split",
+    "class-vort",
+    "class-wave",
+    "class-check",
+    "class-source",
+    "class-thermo",
+    "class-q",
+    "sec-model",
+    "hierarchy",
+    "what-is",
+    "anatomy",
+    "grid",
+    "step-flow",
+    "step-stretch",
+    "step-compress",
+    "step-layers",
+    "physics",
+    "eq-vort-div",
+    "eq-thermo",
+    "forcings-enter",
+    "heating",
+    "numerics",
+    "inputs",
+    "reference-state",
+    "pipeline",
+    "outputs",
+    "sec-exp",
+    "switches",
+    "exp-mtn",
+    "exp-landsea",
+    "exp-heat",
+    "five-runs",
+    "reading",
+    "sec-res",
+    "res-base",
+    "res-mtn",
+    "res-landsea",
+    "res-heat",
+    "res-all",
+    "res-nonlin",
+    "discussion",
+    "refs"
+  ],
+  "sections": {
+    "s1": {
+      "description": "Opening: the question and the plan for the lecture.",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "Observations: waves in the time-mean flow, seen in ERA5.",
+      "start": "sec-obs"
+    },
+    "s3": {
+      "description": "Simple equations: understanding the waves with the equations from class.",
+      "start": "sec-class"
+    },
+    "s4": {
+      "description": "Telly: from the class equations to a model, and its inputs and outputs.",
+      "start": "sec-model"
+    },
+    "s5": {
+      "description": "Experiments: three forcings switched on one at a time.",
+      "start": "sec-exp"
+    },
+    "s6": {
+      "description": "Results: what each forcing does to the wave pattern (preliminary).",
+      "start": "sec-res"
+    }
+  },
+  "faces": {
+    "source-serif-4": {
+      "family": "Source Serif 4",
+      "href": "https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&display=swap"
+    },
+    "ibm-plex-sans": {
+      "family": "IBM Plex Sans",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    },
+    "ibm-plex-mono": {
+      "family": "IBM Plex Mono",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
+    }
+  },
+  "designSystems": []
+}

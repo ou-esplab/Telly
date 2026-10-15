@@ -1,0 +1,1115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Telly Lecture: Stationary Waves</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0b1320;overflow:hidden;font-family:Arial,sans-serif}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center}
+#stage section{position:absolute;left:0;top:0;width:1920px;height:1080px;
+  box-sizing:border-box;overflow:hidden;margin:0}
+/* slides set their own inline display (flex or grid), so hiding needs !important */
+#stage section:not(.on){display:none !important}
+#stage aside{display:none}
+#stage h1,#stage h2,#stage h3,#stage p,#stage ul,#stage ol{margin:0}
+#stage ul,#stage ol{padding-left:1.1em}
+#stage table{border-collapse:collapse}
+#stage th,#stage td{padding:.35em .6em;border-bottom:1px solid #D9D4C7;vertical-align:top}
+#stage th{font-weight:600}
+#stage x-shape{display:block}
+#stage x-shape[kind="arrow-right"]{clip-path:polygon(0 25%,60% 25%,60% 0,100% 50%,60% 100%,60% 75%,0 75%)}
+#hud{position:fixed;right:16px;bottom:12px;color:#8fa0b5;font:14px/1 Arial,sans-serif;user-select:none}
+</style></head>
+<body><div id="stage">
+<section id="cover" style="background:#14233A;color:#F4F1EA;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:space-between">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#E8894A">Telly atmospheric teleconnection model</p>
+<div style="display:flex;flex-direction:column;gap:32px">
+<h1 style="font-family:'Source Serif 4', Georgia, serif;font-size:128px;font-weight:600;line-height:1.05;width:1500px">Why Are There Waves in the Time-Mean Flow?</h1>
+<p style="font-size:44px;line-height:1.3;color:#C5D3E0;width:1300px">From ERA5 observations, to simple equations, to the Telly model</p>
+</div>
+<p style="font-size:28px;color:#C5D3E0">[Presenter name] · [Course] · [Date]</p>
+</section>
+<section id="roadmap" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Overview</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Roadmap</h2>
+</div>
+<div style="flex:1;display:flex;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:104px;font-weight:600;line-height:1;color:#14707C">1</p>
+<div style="display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:36px;font-weight:600">Observe</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5568">What does the time-mean atmosphere look like?</p>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:104px;font-weight:600;line-height:1;color:#14707C">2</p>
+<div style="display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:36px;font-weight:600">Understand</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5568">Why? Simple equations from class</p>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:104px;font-weight:600;line-height:1;color:#14707C">3</p>
+<div style="display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:36px;font-weight:600">Telly</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5568">From the class equations to a model</p>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:104px;font-weight:600;line-height:1;color:#14707C">4</p>
+<div style="display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:36px;font-weight:600">Experiments</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5568">Three forcings switched on one at a time</p>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:104px;font-weight:600;line-height:1;color:#14707C">5</p>
+<div style="display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:36px;font-weight:600">Results</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5568">What each forcing does to the pattern</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="sec-obs" style="background:#14233A;color:#F4F1EA;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:flex-end;gap:24px">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#E8894A">Part 1</p>
+<h1 style="font-family:'Source Serif 4', Georgia, serif;font-size:128px;font-weight:600;line-height:1.05">Observations</h1>
+<p style="font-size:44px;line-height:1.3;color:#C5D3E0;width:1400px">What does the time-mean atmosphere look like?</p>
+</section>
+<section id="obs-map" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 1 · Observations</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">ERA5: Time-Mean 500 hPa Height</h2>
+</div>
+<div style="display:flex;gap:48px">
+<img src="images/era5_z500.png" alt="Map of the ERA5 time-mean 500 hPa height with the zonal mean removed, 1940 to 2024: highs and lows of 100 m or more over the North Pacific, North America, Europe, East Asia and the Southern Ocean" style="width:1040px;height:524px;object-fit:contain;border-radius:12px;border:1px solid #D9D4C7">
+<div style="flex:1;display:flex;flex-direction:column;gap:24px">
+<h3 style="font-size:40px;font-weight:600;color:#14707C">What do you see?</h3>
+<ul style="font-size:30px;line-height:1.4;display:flex;flex-direction:column;gap:18px">
+<li>The zonal mean has been removed: a zonally symmetric atmosphere would give a blank map</li>
+<li>Highs and lows of 100 m or more remain</li>
+<li>They stay at the same places in the time mean</li>
+</ul>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">ERA5 daily 500 hPa height, 1940–2024: the time mean minus its zonal mean · Telly · stationary Rossby waves</p>
+</section>
+<section id="obs-count" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 1 · Observations</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">How Many Waves Fit Around the Globe?</h2>
+</div>
+<div style="flex:1;display:flex;gap:40px">
+<img src="images/era5_count.png" alt="ERA5 time-mean 500 hPa height departure from the zonal mean with a dashed band along 50 to 60 degrees north, marked with two highs and two lows, and below it the height along that band plotted against longitude, with the same two highs and two lows" style="width:1060px;height:632px;object-fit:contain;border-radius:12px;border:1px solid #D9D4C7;background:#FFFFFF">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:26px;font-weight:600;color:#14707C">Count the highs and lows</p>
+<p style="font-size:26px;line-height:1.35">Follow the dashed band once around the globe: 2 highs (H) and 2 lows (L).</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:26px;font-weight:600;color:#14707C">So about 2 waves</p>
+<p style="font-size:26px;line-height:1.35">Their sizes and spacing are uneven, so waves 1 and 3 are present too.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#14233A;color:#F4F1EA;border-radius:16px;padding:24px 28px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#E8894A">In wavenumbers</p>
+<p style="font-size:26px;line-height:1.35">2 waves around 55°N is a wavelength of about 11,500 km: k ≈ 5 × 10⁻⁷ per metre.</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">ERA5 daily 500 hPa height, 1940–2024: time mean minus zonal mean · Telly · stationary Rossby waves</p>
+</section>
+<section id="obs-why" style="background:#14233A;color:#F4F1EA;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:48px">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#E8894A">A question for the class</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:88px;font-weight:600;line-height:1.1;width:1500px">Why is the time-mean atmosphere not the same at every longitude?</h2>
+<p style="font-size:38px;line-height:1.4;width:1350px;color:#C5D3E0">We will look for the answer with a hierarchy of models: simple equations first, then Telly.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#C5D3E0">Telly · stationary Rossby waves</p>
+</section>
+<section id="sec-class" style="background:#14233A;color:#F4F1EA;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:flex-end;gap:24px">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#E8894A">Part 2</p>
+<h1 style="font-family:'Source Serif 4', Georgia, serif;font-size:128px;font-weight:600;line-height:1.05">Simple Equations</h1>
+<p style="font-size:44px;line-height:1.3;color:#C5D3E0;width:1400px">Understanding it with the equations from class</p>
+</section>
+<section id="class-split" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 2 · Simple equations</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Splitting the Flow</h2>
+</div>
+<div style="display:flex;gap:120px;align-items:baseline">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-style:italic;line-height:1.2">u = ū + <span style="color:#14707C">u*</span> + u′</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-style:italic;line-height:1.2">v = v̄ + <span style="color:#14707C">v*</span> + v′</p>
+</div>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:36px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:80px;font-style:italic;line-height:1;color:#14233A">ū</p>
+<h3 style="font-size:36px;font-weight:600">Zonal mean</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">The average around a latitude circle: the same at every longitude.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:2px solid #14707C;border-radius:16px;padding:36px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:80px;font-style:italic;line-height:1;color:#14707C">u*</p>
+<h3 style="font-size:36px;font-weight:600">Stationary wave</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">The part that stays put: the waves in the ERA5 map.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:36px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:80px;font-style:italic;line-height:1;color:#14233A">u′</p>
+<h3 style="font-size:36px;font-weight:600">Transient eddies</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Day-to-day weather that comes and goes.</p>
+</div>
+</div>
+<div style="flex:1"></div>
+<p style="font-size:32px;line-height:1.4">η = ζ + f is the absolute vorticity; on the β-plane, f = f₀ + βy.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="class-vort" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 2 · Simple equations</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Vorticity of the Stationary Wave</h2>
+</div>
+<div style="display:flex;justify-content:center;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-style:italic;line-height:1.2">∂ζ*/∂t + ū ∂ζ*/∂x + β v* = 0</p>
+</div>
+<div style="flex:1;display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:36px 40px">
+<h3 style="font-size:36px;font-weight:600;color:#14707C">Reading the terms</h3>
+<p style="font-size:30px;line-height:1.4"><b>∂ζ*/∂t</b>: how the wave’s vorticity changes</p>
+<p style="font-size:30px;line-height:1.4"><b>ū ∂ζ*/∂x</b>: carried eastward by the mean wind</p>
+<p style="font-size:30px;line-height:1.4"><b>β v*</b>: changes as air moves north or south, where the planet’s own vorticity is different</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:36px 40px">
+<h3 style="font-size:36px;font-weight:600;color:#14707C">What we assumed</h3>
+<p style="font-size:30px;line-height:1.4">The waves are small, so products of wave terms are dropped</p>
+<p style="font-size:30px;line-height:1.4">Day-to-day weather is ignored</p>
+<p style="font-size:30px;line-height:1.4">The flow is nearly non-divergent</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="class-wave" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 2 · Simple equations</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Streamfunction and the Wave Equation</h2>
+</div>
+<div style="flex:1;display:flex;gap:48px">
+<div style="width:1010px;display:flex;flex-direction:column;justify-content:space-between">
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:26px;font-weight:600;color:#14707C">1 · Define a streamfunction</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;font-style:italic;line-height:1.3">u* = −∂ψ*/∂y,  v* = ∂ψ*/∂x,  ζ* = ∇²ψ*</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:26px;font-weight:600;color:#14707C">2 · Substitute into the vorticity equation</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;font-style:italic;line-height:1.3">(∂/∂t + ū ∂/∂x) ∇²ψ* + β ∂ψ*/∂x = 0</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:26px;font-weight:600;color:#14707C">3 · Try a wave, and find its frequency and phase speed</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;font-style:italic;line-height:1.3">ψ* = A e^{i(kx + ly − ωt)}</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;font-style:italic;line-height:1.3">ω = ūk − βk/K²,   c = ω/k = ū − β/K²</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:26px;font-weight:600;color:#14707C">4 · Which waves can stand still? Set c = 0</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:44px;font-style:italic;font-weight:700;line-height:1.3;color:#14707C">k² + l² = Ks² = β/ū</p>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Only east–west (k) and north–south (l) wavenumbers that satisfy this stay put. Ks (s for stationary) is the total wavenumber of a stationary wave.</p>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:2px solid #14707C;border-radius:16px;padding:28px 32px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Stationary does not mean no motion</p>
+<p style="font-size:28px;line-height:1.4">Air still flows through the pattern at speed ū. The pattern stays put because westward wave propagation, β/K², cancels the eastward flow.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#14233A;color:#F4F1EA;border-radius:16px;padding:28px 32px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#E8894A">Example</p>
+<p style="font-size:28px;line-height:1.4">ū = 20 m/s at 45°N gives Ks ≈ 9 × 10⁻⁷ per metre. Two waves around the globe use k ≈ 4 × 10⁻⁷, which leaves l ≈ 8 × 10⁻⁷.</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Here ω is the wave frequency, K² = k² + l², and β = 2Ω cos φ / a · Telly · stationary Rossby waves</p>
+</section>
+<section id="class-check" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 2 · Simple equations</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Do the ERA5 Waves Fit?</h2>
+</div>
+<div style="flex:1;display:flex;gap:48px">
+<img src="images/era5_k_l.png" alt="Plot of east-west wavenumber k against north-south wavenumber l: a quarter circle for k squared plus l squared equal to Ks squared, a shaded band around it, and orange dots for the ERA5 stationary waves that cluster at one to three waves around the globe, many of them near the circle" style="width:780px;height:594px;object-fit:contain;border-radius:12px;border:1px solid #D9D4C7;background:#FFFFFF">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:26px;font-weight:600;color:#14707C">1 · Measure k and l in ERA5</p>
+<p style="font-size:26px;line-height:1.35">Split the 500 hPa pattern between 30°N and 70°N into waves around the globe (k) and waves from south to north (l).</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:26px;font-weight:600;color:#14707C">2 · Draw the stationary circle</p>
+<p style="font-size:26px;line-height:1.35">With the observed ū ≈ 10 m/s, k² + l² = β/ū is a circle with Ks ≈ 1.2 × 10⁻⁶ per metre.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#14233A;color:#F4F1EA;border-radius:16px;padding:24px 28px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#E8894A">What we find</p>
+<p style="font-size:26px;line-height:1.35">Almost all of the pattern is 1 to 3 waves around the globe, with one or two half-waves from south to north. About 60% of it lies within 50% of the circle. The rest is larger scale.</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">ERA5 1991–2020 time mean; 30°N–70°N; ū is the 500 hPa zonal-mean wind · Telly · stationary Rossby waves</p>
+</section>
+<section id="class-source" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 2 · Simple equations</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Adding a Source</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:32px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:56px;font-style:italic;line-height:1.2">∂ζ*/∂t + ū ∂ζ*/∂x + β v* = <span style="color:#B8501A">S</span></p>
+<p style="font-size:30px;line-height:1.4;color:#4A5568"><b style="color:#B8501A">S</b> is a push on the wave: anything that squeezes or stretches columns of air, and so changes their spin.</p>
+</div>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 32px">
+<h3 style="font-size:34px;font-weight:600">Air forced over a slope</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">A column pushed up a mountain is squeezed, which changes its spin.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 32px">
+<h3 style="font-size:34px;font-weight:600">Heating that lifts air</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Columns are stretched below the heating and squeezed above it.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 32px">
+<h3 style="font-size:34px;font-weight:600">Land–sea contrast</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Land and ocean warm differently: like heating over one and cooling over the other.</p>
+</div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:48px;background:#14233A;color:#F4F1EA;border-radius:16px;padding:28px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:44px;font-style:italic">ψ* = S / [ik(β − ūK²)]</p>
+<p style="font-size:28px;line-height:1.4;color:#C5D3E0">The steady response is strongest when the size of the push matches Ks, the stationary wavenumber from the last slide: Ks = √(β/ū), where c = 0.</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="class-thermo" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 2 · Simple equations</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Heat, Pressure and Air Motion</h2>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:24px">
+<div style="flex:1;display:flex;align-items:center;gap:40px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 40px">
+<div style="width:560px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:36px;font-weight:600;color:#14707C">Temperature</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">The wind carries temperature; heating Q warms the air. There is no compression term yet.</p>
+</div>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:40px;font-style:italic;line-height:1.3">∂T/∂t + u ∂T/∂x + v ∂T/∂y + ω ∂T/∂p = <span style="color:#B8501A">Q/cp</span></p>
+</div>
+<div style="flex:1;display:flex;align-items:center;gap:40px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 40px">
+<div style="width:560px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:36px;font-weight:600;color:#14707C">Hydrostatic</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Temperature sets how far apart the pressure surfaces are.</p>
+</div>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:40px;font-style:italic;line-height:1.3">∂Φ/∂p = −RT/p</p>
+</div>
+<div style="flex:1;display:flex;align-items:center;gap:40px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 40px">
+<div style="width:560px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:36px;font-weight:600;color:#14707C">Continuity</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Air that converges sideways must move vertically.</p>
+</div>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:40px;font-style:italic;line-height:1.3">∂u/∂x + ∂v/∂y + ∂ω/∂p = 0</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="class-q" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 2 · Simple equations</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">What Is in Q?</h2>
+</div>
+<div style="display:flex;justify-content:center;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:20px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:44px;font-style:italic;line-height:1.2">Q = Qrad + <span style="color:#B8501A">Qlatent</span> + Qsurface</p>
+</div>
+<table style="width:1664px;font-size:26px;color:#14233A">
+<tr style="background:#14233A"><th style="width:18%;color:#F4F1EA;text-align:left">Process</th><th style="width:44%;color:#F4F1EA;text-align:left">What it is</th><th style="width:38%;color:#F4F1EA;text-align:left">In Telly</th></tr>
+<tr style="background:#FBFAF6"><td style="width:18%;font-weight:600">Radiation</td><td style="width:44%">Sunlight absorbed, infrared emitted: warms the tropics, cools the poles</td><td style="width:38%">Not computed; the pull toward the background temperature stands in for it</td></tr>
+<tr style="background:#EAE5D8"><td style="width:18%;font-weight:600;color:#B8501A">Latent heating</td><td style="width:44%">Heat released when water vapor condenses into rain</td><td style="width:38%">Prescribed from observed rainfall: the Q/cp term</td></tr>
+<tr style="background:#FBFAF6"><td style="width:18%;font-weight:600">Surface heating</td><td style="width:44%">Warm land or ocean heats the air above it by mixing</td><td style="width:38%">Not computed; carried by the background temperature (the land–sea contrast)</td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:30px;font-weight:600;line-height:1.3;color:#14707C">So far we have thought of Q as radiative heating. In Telly, Q is the latent heating only.</p>
+<p style="font-size:26px;line-height:1.4;color:#4A5568">Telly has no solar heating or outgoing longwave radiation, so no energy balance: the equator-to-pole temperature contrast is imposed by the background state, not produced.</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="sec-model" style="background:#14233A;color:#F4F1EA;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:flex-end;gap:24px">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#E8894A">Part 3</p>
+<h1 style="font-family:'Source Serif 4', Georgia, serif;font-size:128px;font-weight:600;line-height:1.05">Telly</h1>
+<p style="font-size:44px;line-height:1.3;color:#C5D3E0;width:1300px">From the class equations to a model</p>
+</section>
+<section id="hierarchy" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Where Telly Fits</h2>
+</div>
+<div style="flex:1;display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:36px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#4A5568">Observations</p>
+<h3 style="font-size:40px;font-weight:600">Real atmosphere</h3>
+</div>
+<p style="font-size:30px;line-height:1.4;color:#4A5568">Everything acts at once, so the causes are hard to separate.</p>
+</div>
+<x-shape kind="arrow-right" style="align-self:center;width:56px;height:44px;background:#14707C"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:36px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#4A5568">Class</p>
+<h3 style="font-size:40px;font-weight:600">Simple equations</h3>
+</div>
+<p style="font-size:30px;line-height:1.4;color:#4A5568">Easy to understand, but many things are dropped.</p>
+</div>
+<x-shape kind="arrow-right" style="align-self:center;width:56px;height:44px;background:#14707C"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:2px solid #14707C;border-radius:16px;padding:36px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Today</p>
+<h3 style="font-size:40px;font-weight:600">Telly</h3>
+</div>
+<p style="font-size:30px;line-height:1.4;color:#4A5568">Keeps the main physics, and each forcing can be switched on or off.</p>
+</div>
+</div>
+<p style="font-size:34px;font-weight:600;line-height:1.3;color:#14707C;width:1500px">Each step answers a different question: what do we see, why does it happen, and how much does each cause matter?</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="what-is" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">What Telly Is</h2>
+</div>
+<table style="width:1664px;font-size:32px;color:#14233A">
+<tr style="background:#14233A"><th style="width:26%;color:#F4F1EA;text-align:left">Property</th><th style="width:74%;color:#F4F1EA;text-align:left">Description</th></tr>
+<tr style="background:#FBFAF6"><td style="width:26%;font-weight:600">The physics</td><td style="width:74%">The class equations for motion, heat and mass, without the simplifications</td></tr>
+<tr style="background:#EAE5D8"><td style="width:26%;font-weight:600">The grid</td><td style="width:74%">Boxes about 2° wide (about 200 km), in 26 layers up to about 2 hPa</td></tr>
+<tr style="background:#FBFAF6"><td style="width:26%;font-weight:600">What it tracks</td><td style="width:74%">Vorticity, divergence, temperature and surface pressure</td></tr>
+<tr style="background:#EAE5D8"><td style="width:26%;font-weight:600">Simple stand-ins</td><td style="width:74%">Friction, smoothing, a pull toward a background state, and heating from prescribed rainfall patterns</td></tr>
+<tr style="background:#FBFAF6"><td style="width:26%;font-weight:600">Left out</td><td style="width:74%">Detailed treatment of radiation, clouds, the boundary layer and the land surface</td></tr>
+</table>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · Kirtman et al. (2025), Bull. Amer. Meteor. Soc., 106, E2073–E2086</p>
+</section>
+<section id="anatomy" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Model Anatomy</h2>
+</div>
+<div style="flex:1;display:flex;gap:32px">
+<div style="width:520px;display:flex;flex-direction:column;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 32px">
+<h3 style="font-size:36px;font-weight:600;color:#B8501A">Heating, Q</h3>
+<p style="font-size:28px;line-height:1.35;color:#4A5568">Rainfall with a prescribed pattern warms the air</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 32px">
+<h3 style="font-size:36px;font-weight:600;color:#B8501A">Topography, Φs</h3>
+<p style="font-size:28px;line-height:1.35;color:#4A5568">Ground height sets the bottom of the atmosphere</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 32px">
+<h3 style="font-size:36px;font-weight:600;color:#14707C">Background state</h3>
+<p style="font-size:28px;line-height:1.35;color:#4A5568">Average winds and temperatures the model is gently pulled toward</p>
+</div>
+</div>
+<x-shape kind="arrow-right" style="align-self:center;width:72px;height:56px;background:#14707C"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#14233A;color:#F4F1EA;border-radius:16px;padding:40px">
+<h3 style="font-size:40px;font-weight:600">What the model tracks</h3>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-style:italic;line-height:1.15;color:#E8894A">ζ, D, T, ln ps</p>
+<p style="font-size:28px;line-height:1.35;color:#C5D3E0">Friction and smoothing keep it stable</p>
+</div>
+<x-shape kind="arrow-right" style="align-self:center;width:72px;height:56px;background:#14707C"></x-shape>
+<div style="width:420px;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:40px">
+<h3 style="font-size:40px;font-weight:600">Daily output</h3>
+<p style="font-size:28px;line-height:1.35;color:#4A5568">Winds, temperature, height, heating and surface pressure, every day, in 30-day files</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="grid" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">The Model Grid</h2>
+</div>
+<img src="images/model_grid.png" alt="Two panels: on the left, the model's grid boxes about 2 degrees wide over North America, shaded land or ocean with one box highlighted; on the right, a vertical cross-section with 26 layers that follow the ground, which is about 560 hPa over a high plateau and 1000 hPa over the ocean" style="width:1600px;height:540px;object-fit:contain">
+<p style="font-size:30px;line-height:1.4;width:1500px">About 480,000 boxes in all: 192 × 96 around the globe, in 26 layers.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="step-flow" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · From class to Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Step 1: Keep the Whole Flow</h2>
+</div>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 32px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#4A5568">Class</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:36px;font-style:italic;line-height:1.3">∂ζ*/∂t + ū ∂ζ*/∂x + β v* = 0</p>
+</div>
+<x-shape kind="arrow-right" style="align-self:center;width:64px;height:48px;background:#14707C"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:2px solid #14707C;border-radius:16px;padding:28px 32px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Telly</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:36px;font-style:italic;line-height:1.3">∂ζ/∂t + u ∂ζ/∂x + v ∂ζ/∂y + β v = …</p>
+</div>
+</div>
+<ul style="font-size:32px;line-height:1.4;display:flex;flex-direction:column;gap:18px;width:1500px">
+<li>No split into ū, u*, u′: the model follows the total wind, so waves and weather act on each other</li>
+<li>No small-wave assumption: every advection term is kept</li>
+<li>The Earth is a sphere: f = 2Ω sin φ replaces f₀ + βy</li>
+<li>The stationary wave is found afterwards: the time mean minus the zonal mean</li>
+</ul>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="step-stretch" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · From class to Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Step 2: Let Columns Stretch</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:32px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-style:italic;line-height:1.2">∂ζ/∂t + V·∇ζ + β v = <span style="color:#14707C">−(ζ + f) D</span></p>
+<p style="font-size:28px;color:#4A5568">D = ∂u/∂x + ∂v/∂y is the divergence of the wind.</p>
+</div>
+<ul style="font-size:32px;line-height:1.4;display:flex;flex-direction:column;gap:18px;width:1550px">
+<li>Class: the flow is nearly non-divergent, so this term is dropped</li>
+<li>Telly keeps it: converging air stretches a column and spins it up; diverging air squeezes it</li>
+<li>Mountains and heating act through D, so this is where the source S of the class equation appears in Telly</li>
+</ul>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:40px;background:#14233A;color:#F4F1EA;border-radius:16px;padding:28px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;font-style:italic">−∇·(ηV) = −V·∇ζ − β v − (ζ + f) D</p>
+<p style="font-size:28px;line-height:1.4;color:#F4F1EA">Telly computes all three terms at once, as one quantity: −∇·(ηV).</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="step-compress" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · From class to Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Step 3: Add Compression</h2>
+</div>
+<div style="background:#FBFAF6;border:2px solid #14707C;border-radius:16px;padding:24px 36px">
+<p style="font-size:36px;font-weight:600;line-height:1.3"><span style="color:#14707C">Why:</span> air that moves up or down changes pressure, and that changes its temperature even with no heating.</p>
+</div>
+<div style="flex:1;display:flex;gap:40px">
+<div style="width:1000px;display:flex;flex-direction:column;justify-content:space-between">
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:26px;font-weight:600;color:#14707C">1 · First law for a moving air parcel</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;font-style:italic;line-height:1.3">cp DT/Dt − αω = Q</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:26px;font-weight:600;color:#14707C">2 · Use the ideal gas law, α = RT/p</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;font-style:italic;line-height:1.3">DT/Dt = <span style="color:#14707C">κTω/p</span> + <span style="color:#B8501A">Q/cp</span>,  κ = R/cp</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="font-size:26px;font-weight:600;color:#14707C">3 · Write out DT/Dt</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:34px;font-style:italic;line-height:1.3">∂T/∂t + u ∂T/∂x + v ∂T/∂y + ω ∂T/∂p <span style="color:#14707C">− κTω/p</span> = <span style="color:#B8501A">Q/cp</span></p>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#14233A;color:#F4F1EA;border-radius:16px;padding:32px 36px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#E8894A">What it means</p>
+<p style="font-size:28px;line-height:1.4">Rising air (ω &lt; 0) expands and cools. Sinking air (ω &gt; 0) is compressed and warms.</p>
+<p style="font-size:28px;line-height:1.4">The class term ω ∂T/∂p only carries temperature up or down. It has no expansion or compression in it.</p>
+<p style="font-size:28px;line-height:1.4;color:#E8894A">At 500 hPa, ∂T/∂p ≈ 0.095 K/hPa but κT/p ≈ 0.14 K/hPa: leaving compression out gets the vertical response wrong by a factor of 2.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Typical values: T = 250 K, lapse rate 6.5 K/km · Telly · stationary Rossby waves</p>
+</section>
+<section id="step-layers" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · From class to Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Step 4: Stack Layers</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:40px;font-style:italic;line-height:1.3">Φ = <span style="color:#B8501A">Φs</span> + R ∫ T d(ln p)</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:40px;font-style:italic;line-height:1.3">∂u/∂x + ∂v/∂y + ∂ω/∂p = 0</p>
+</div>
+<div style="flex:1;display:flex;gap:28px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 32px">
+<h3 style="font-size:34px;font-weight:600;color:#14707C">Hydrostatic</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">The temperatures of all 26 layers give the height of every pressure surface. The ground height Φs is the bottom of the sum: this is where mountains enter.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 32px">
+<h3 style="font-size:34px;font-weight:600;color:#14707C">Continuity</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Convergence in each layer gives the vertical motion ω between layers.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 32px">
+<h3 style="font-size:34px;font-weight:600;color:#14707C">All layers at once</h3>
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Each layer has its own wind, temperature and ω. The terms ω ∂T/∂p and compression link neighboring layers.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="physics" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · From class to Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Step 5: Simple Damping</h2>
+</div>
+<p style="font-size:34px;line-height:1.4;width:1500px">Friction, smoothing and a gentle pull toward a background state keep the model realistic and stable.</p>
+<table style="width:1664px;font-size:30px;color:#14233A">
+<tr style="background:#14233A"><th style="width:46%;color:#F4F1EA;text-align:left">What it does</th><th style="width:30%;color:#F4F1EA;text-align:left">Written as</th><th style="width:24%;color:#F4F1EA;text-align:left">How fast</th></tr>
+<tr style="background:#FBFAF6"><td style="width:46%;font-weight:600">Pulls temperature and surface pressure toward the background state</td><td style="width:30%;color:#14707C">−(T − Tref)/τ</td><td style="width:24%">40 days</td></tr>
+<tr style="background:#EAE5D8"><td style="width:46%;font-weight:600">Friction: pulls vorticity and divergence toward the background state</td><td style="width:30%;color:#14707C">−(ζ − ζref)/τ</td><td style="width:24%">150 days</td></tr>
+<tr style="background:#FBFAF6"><td style="width:46%;font-weight:600">Smooths the smallest scales</td><td style="width:30%;color:#14707C">diffusion</td><td style="width:24%">21 to 28 hours</td></tr>
+</table>
+<p style="font-size:28px;line-height:1.4;color:#4A5568;width:1500px">The pull is faster for the zonal mean (7 days) and for the lowest two layers (2 to 3 days).</p>
+<div style="flex:1"></div>
+<p style="font-size:36px;font-weight:600;line-height:1.3;color:#14707C">The background state is a choice, and our experiments change it.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="eq-vort-div" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Telly: Vorticity and Divergence</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:22px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:36px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;line-height:1.35"><span style="color:#14233A">∂ζ/∂t = −∇·(ηV)</span> <span style="color:#14707C">− R k·(∇T × ∇ln ps) − (ζ − ζref)/τ + smoothing</span></p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;line-height:1.35"><span style="color:#14707C">∂D/∂t = k·∇×(ηV) − ∇²(</span><span style="color:#B8501A">Φ</span><span style="color:#14707C"> + ½V·V) − R ∇·(T ∇ln ps) − (D − Dref)/τ + smoothing</span></p>
+</div>
+<div style="display:flex;gap:56px;align-items:center">
+<p style="font-size:28px;color:#14233A"><span style="color:#14233A;font-size:28px">■</span> from class</p>
+<p style="font-size:28px;color:#14233A"><span style="color:#14707C">■</span> added in Telly</p>
+<p style="font-size:28px;color:#14233A"><span style="color:#B8501A">■</span> forcing</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:32px;line-height:1.4;width:1500px">The first term is steps 1 and 2 together. Divergence D now has its own equation: it is how Telly follows columns stretching and squeezing.</p>
+<p style="font-size:32px;line-height:1.4;width:1500px">The height Φ includes the ground height Φs, so terrain pushes on D.</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Some vertical terms are left out of this view · Telly · stationary Rossby waves</p>
+</section>
+<section id="eq-thermo" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Telly: Temperature and Pressure</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:22px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:36px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;line-height:1.35"><span style="color:#14233A">∂T/∂t = −V·∇T − ω ∂T/∂p</span> <span style="color:#14707C">+ κTω/p</span> <span style="color:#B8501A">+ Q/cp</span> <span style="color:#14707C">− (T − Tref)/τ + smoothing</span></p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;line-height:1.35"><span style="color:#14707C">∂(ln ps)/∂t = −V·∇(ln ps) − (sum of D over all layers) − (ln ps − ln psref)/τ</span></p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;line-height:1.35"><span style="color:#14233A">Φ = </span><span style="color:#B8501A">Φs</span><span style="color:#14233A"> + R ∫ T d(ln p)</span></p>
+</div>
+<div style="display:flex;gap:56px;align-items:center">
+<p style="font-size:28px;color:#14233A"><span style="color:#14233A">■</span> from class</p>
+<p style="font-size:28px;color:#14233A"><span style="color:#14707C">■</span> added in Telly</p>
+<p style="font-size:28px;color:#14233A"><span style="color:#B8501A">■</span> forcing</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:32px;line-height:1.4;width:1500px">The temperature equation is the class equation plus compression, a pull toward the background state and smoothing.</p>
+<p style="font-size:32px;line-height:1.4;width:1500px">Surface pressure is new: it changes where columns converge or diverge.</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly writes the advection terms in an equivalent form · Telly · stationary Rossby waves</p>
+</section>
+<section id="forcings-enter" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Where the Forcings Enter</h2>
+</div>
+<div style="flex:1;display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:40px">
+<h3 style="font-size:40px;font-weight:600">Mountains</h3>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:88px;font-style:italic;line-height:1.1;color:#B8501A">Φs</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5568">Ground height is the bottom of the height sum, so it pushes on the divergence</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:40px">
+<h3 style="font-size:40px;font-weight:600">Land–sea contrast</h3>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:56px;font-style:italic;line-height:1.1;color:#14707C">−(T − Tref)/τ</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5568">Land and ocean are pulled toward different background temperatures, like heating and cooling</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:40px">
+<h3 style="font-size:40px;font-weight:600">Diabatic heating</h3>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:88px;font-style:italic;line-height:1.1;color:#B8501A">Q/cp</p>
+<p style="font-size:30px;line-height:1.4;color:#4A5568">Rainfall heating in the temperature equation</p>
+</div>
+</div>
+<p style="font-size:32px;font-weight:600">Each one is a kind of source S from the class equation.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="heating" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Heating from Observed Rainfall Patterns</h2>
+</div>
+<div style="flex:1;display:flex;gap:64px">
+<div style="width:1000px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:32px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:44px;line-height:1.25">P ~ Gamma(k, θ)</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:44px;line-height:1.25"><span style="color:#B8501A;font-weight:700">Q/cp</span> = β · exp(−φ²/1000) · P · s</p>
+</div>
+<ul style="font-size:30px;line-height:1.4;display:flex;flex-direction:column;gap:12px">
+<li>The pattern is prescribed: k and θ are fitted to daily satellite rainfall at every location and day of the year, so the average rain, kθ, follows the observed pattern</li>
+<li>Only the day-to-day amount varies: each day’s rain is drawn around that average, with a spread set by k and θ</li>
+<li>The rain does not respond to the model’s own weather</li>
+<li>The factor exp(−φ²/1000), with latitude φ in degrees, confines heating to the tropics; β turns rain into heating and s spreads it in the vertical</li>
+</ul>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;font-weight:600;color:#4A5568">Vertical profile s, top of the model to the ground</p>
+<div style="display:flex;flex-direction:column;gap:3px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:24px">
+<div style="height:15px;width:0px;background:#B8501A"></div>
+<div style="height:15px;width:0px;background:#B8501A"></div>
+<div style="height:15px;width:0px;background:#B8501A"></div>
+<div style="height:15px;width:0px;background:#B8501A"></div>
+<div style="height:15px;width:0px;background:#B8501A"></div>
+<div style="height:15px;width:60px;background:#B8501A"></div>
+<div style="height:15px;width:120px;background:#B8501A"></div>
+<div style="height:15px;width:180px;background:#B8501A"></div>
+<div style="height:15px;width:240px;background:#B8501A"></div>
+<div style="height:15px;width:360px;background:#B8501A"></div>
+<div style="height:15px;width:420px;background:#B8501A"></div>
+<div style="height:15px;width:420px;background:#B8501A"></div>
+<div style="height:15px;width:420px;background:#B8501A"></div>
+<div style="height:15px;width:480px;background:#B8501A"></div>
+<div style="height:15px;width:480px;background:#B8501A"></div>
+<div style="height:15px;width:480px;background:#B8501A"></div>
+<div style="height:15px;width:480px;background:#B8501A"></div>
+<div style="height:15px;width:420px;background:#B8501A"></div>
+<div style="height:15px;width:420px;background:#B8501A"></div>
+<div style="height:15px;width:360px;background:#B8501A"></div>
+<div style="height:15px;width:300px;background:#B8501A"></div>
+<div style="height:15px;width:180px;background:#B8501A"></div>
+<div style="height:15px;width:120px;background:#B8501A"></div>
+<div style="height:15px;width:60px;background:#B8501A"></div>
+<div style="height:15px;width:0px;background:#B8501A"></div>
+<div style="height:15px;width:0px;background:#B8501A"></div>
+</div>
+<p style="font-size:24px;color:#5A6168">Peaks in the middle of the troposphere; scaled so it adds up to 1.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="numerics" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">How the Model Runs</h2>
+</div>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:96px;font-weight:600;line-height:1;color:#14707C">2°</p>
+<p style="font-size:30px;line-height:1.35;color:#4A5568">Grid boxes about 200 km wide</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:96px;font-weight:600;line-height:1;color:#14707C">26</p>
+<p style="font-size:30px;line-height:1.35;color:#4A5568">Layers in the vertical</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:96px;font-weight:600;line-height:1;color:#14707C">4 min</p>
+<p style="font-size:30px;line-height:1.35;color:#4A5568">Time step: the equations are advanced every 4 minutes</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:96px;font-weight:600;line-height:1;color:#14707C">1 day</p>
+<p style="font-size:30px;line-height:1.35;color:#4A5568">of computer time for a 5-year run</p>
+</div>
+</div>
+<ul style="font-size:32px;line-height:1.4;display:flex;flex-direction:column;gap:18px;width:1500px">
+<li>At each step the model works out how the wind, temperature and pressure change, using the equations from the last few slides</li>
+<li>A 5-year run is about 600,000 steps</li>
+<li>Rainfall varies from day to day, so we average over years to see the stationary waves</li>
+</ul>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="inputs" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">What Goes In</h2>
+</div>
+<table style="width:1664px;font-size:28px;color:#14233A">
+<tr style="background:#14233A"><th style="width:26%;color:#F4F1EA;text-align:left">Input</th><th style="width:44%;color:#F4F1EA;text-align:left">What it describes</th><th style="width:30%;color:#F4F1EA;text-align:left">Where it comes from</th></tr>
+<tr style="background:#FBFAF6"><td style="width:26%;font-weight:600">Ground height</td><td style="width:44%">The height of the terrain at each point</td><td style="width:30%">A gridded topography data set</td></tr>
+<tr style="background:#EAE5D8"><td style="width:26%;font-weight:600">Surface pressure</td><td style="width:44%">Average surface pressure for each day of the year</td><td style="width:30%">NCEP reanalysis, 1994–2024</td></tr>
+<tr style="background:#FBFAF6"><td style="width:26%;font-weight:600">Winds and temperature</td><td style="width:44%">Average through the year in every layer: the background state</td><td style="width:30%">NCEP reanalysis, 1994–2024</td></tr>
+<tr style="background:#EAE5D8"><td style="width:26%;font-weight:600">Starting temperature</td><td style="width:44%">Where the model begins</td><td style="width:30%">NCEP plus a typical decrease with height</td></tr>
+<tr style="background:#FBFAF6"><td style="width:26%;font-weight:600">Rainfall statistics</td><td style="width:44%">How much it rains each day, and how variable it is</td><td style="width:30%">Fit to daily satellite rainfall</td></tr>
+<tr style="background:#EAE5D8"><td style="width:26%;font-weight:600">Land–sea map</td><td style="width:44%">The fraction of land in each grid box</td><td style="width:30%">ERA5 land–sea mask</td></tr>
+</table>
+<div style="flex:1"></div>
+<p style="font-size:28px;color:#4A5568">Monthly averages are interpolated to every day of the year. These inputs are prepared once and reused by every run.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="reference-state" style="background:#14233A;color:#F4F1EA;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:48px">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#E8894A">Why the background state matters</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:84px;font-weight:600;line-height:1.1;width:1500px">The average state the model is pulled toward already contains the observed stationary waves.</h2>
+<p style="font-size:38px;line-height:1.4;width:1350px;color:#C5D3E0">A run that keeps the observed background state is pulled toward the answer. These experiments use a background state that is the same at every longitude, and add each forcing separately.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#C5D3E0">Telly · stationary Rossby waves</p>
+</section>
+<section id="pipeline" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Running an Experiment</h2>
+</div>
+<div style="display:flex;gap:20px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1;color:#14707C">1</p>
+<h3 style="font-size:36px;font-weight:600">Prepare inputs</h3>
+<p style="font-size:28px;line-height:1.35;color:#4A5568">Put the data on the model grid</p>
+</div>
+<x-shape kind="arrow-right" style="align-self:center;width:48px;height:40px;background:#14707C"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1;color:#14707C">2</p>
+<h3 style="font-size:36px;font-weight:600">Run the model</h3>
+<p style="font-size:28px;line-height:1.35;color:#4A5568">Step the equations forward in time</p>
+</div>
+<x-shape kind="arrow-right" style="align-self:center;width:48px;height:40px;background:#14707C"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1;color:#14707C">3</p>
+<h3 style="font-size:36px;font-weight:600">Convert</h3>
+<p style="font-size:28px;line-height:1.35;color:#4A5568">Interpolate to standard pressure levels</p>
+</div>
+<x-shape kind="arrow-right" style="align-self:center;width:48px;height:40px;background:#14707C"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1;color:#14707C">4</p>
+<h3 style="font-size:36px;font-weight:600">Make maps</h3>
+<p style="font-size:28px;line-height:1.35;color:#4A5568">Time means and differences</p>
+</div>
+</div>
+<div style="flex:1;display:flex;gap:48px">
+<div style="width:820px;display:flex;flex-direction:column;gap:12px;background:#14233A;border-radius:16px;padding:36px 40px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#E8894A">One settings file per experiment</p>
+<p style="font-size:32px;line-height:1.6;color:#F4F1EA">Mountains: real<br>Land–sea contrast: on<br>Heating: observed<br>Length: 5 years</p>
+</div>
+<ul style="flex:1;font-size:30px;line-height:1.4;display:flex;flex-direction:column;gap:16px">
+<li>Inputs are prepared once and reused by every run</li>
+<li>Output is saved in 30-day files, so a run can be extended</li>
+<li>Each step can be run on its own</li>
+</ul>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="outputs" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">What Comes Out</h2>
+</div>
+<table style="width:1664px;font-size:30px;color:#14233A">
+<tr style="background:#14233A"><th style="width:30%;color:#F4F1EA;text-align:left">Output</th><th style="width:56%;color:#F4F1EA;text-align:left">Contents</th><th style="width:14%;color:#F4F1EA;text-align:left">Step</th></tr>
+<tr style="background:#FBFAF6"><td style="width:30%;font-weight:600">Daily model fields</td><td style="width:56%">Winds, temperature, height, heating and surface pressure in every layer, one file per 30 days</td><td style="width:14%">2</td></tr>
+<tr style="background:#EAE5D8"><td style="width:30%;font-weight:600">Saved state</td><td style="width:56%">Lets a run be continued where it stopped</td><td style="width:14%">2</td></tr>
+<tr style="background:#FBFAF6"><td style="width:30%;font-weight:600">Pressure-level fields</td><td style="width:56%">Winds, temperature and height at 850, 500, 300 and 200 hPa</td><td style="width:14%">3</td></tr>
+<tr style="background:#EAE5D8"><td style="width:30%;font-weight:600">Figures</td><td style="width:56%">Time-mean maps and differences from a control run</td><td style="width:14%">4</td></tr>
+</table>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:32px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:80px;font-weight:600;line-height:1;color:#14707C">61</p>
+<p style="font-size:28px;line-height:1.35;color:#4A5568">30-day files make up a 5-year run</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:32px 40px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:80px;font-weight:600;line-height:1;color:#14707C">≈ 0.5 GB</p>
+<p style="font-size:28px;line-height:1.35;color:#4A5568">per file, about 33 GB for 5 years</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="sec-exp" style="background:#14233A;color:#F4F1EA;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:flex-end;gap:24px">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#E8894A">Part 4</p>
+<h1 style="font-family:'Source Serif 4', Georgia, serif;font-size:128px;font-weight:600;line-height:1.05">Experiments</h1>
+<p style="font-size:44px;line-height:1.3;color:#C5D3E0;width:1400px">Three forcings switched on one at a time</p>
+</section>
+<section id="switches" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 4 · Experiments</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Three Forcings, Each On or Off</h2>
+</div>
+<table style="width:1664px;font-size:30px;color:#14233A">
+<tr style="background:#14233A"><th style="width:20%;color:#F4F1EA;text-align:left">Forcing</th><th style="width:27%;color:#F4F1EA;text-align:left">Off</th><th style="width:27%;color:#F4F1EA;text-align:left">On</th><th style="width:26%;color:#F4F1EA;text-align:left">What it changes</th></tr>
+<tr style="background:#FBFAF6"><td style="width:20%;font-weight:600">Mountains</td><td style="width:27%">Flat: ground height set to zero</td><td style="width:27%">Real topography</td><td style="width:26%">The ground under the air</td></tr>
+<tr style="background:#EAE5D8"><td style="width:20%;font-weight:600">Land–sea contrast</td><td style="width:27%">Background temperature the same at every longitude</td><td style="width:27%">Observed land–ocean temperature differences added</td><td style="width:26%">The background temperature</td></tr>
+<tr style="background:#FBFAF6"><td style="width:20%;font-weight:600">Diabatic heating</td><td style="width:27%">Rainfall the same at every longitude</td><td style="width:27%">Observed rainfall</td><td style="width:26%">The latent heating, Q/cp</td></tr>
+</table>
+<div style="flex:1"></div>
+<p style="font-size:36px;font-weight:600;line-height:1.3;color:#14707C">Each switch changes only its own part of the model. The next three slides show what each one looks like.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="exp-mtn" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 4 · Experiments · forcing 1 of 3</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Mountains: Off and On</h2>
+</div>
+<div style="flex:1;display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:24px 24px">
+<h3 style="font-size:36px;font-weight:600;color:#5A6168">Off: flat ground</h3>
+<img src="images/exp_mtn_off.png" alt="Map of the ground height with the value zero everywhere: the coastlines are drawn but the ground is at sea level" style="width:768px;height:303px;object-fit:contain">
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Ground height is zero at every point: no Himalayas, Rockies or Andes. The wind meets no slopes.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:24px 24px">
+<h3 style="font-size:36px;font-weight:600;color:#B8501A">On: real ground height</h3>
+<img src="images/exp_mtn_on.png" alt="Map of the real ground height in metres, with the Tibetan Plateau, the Andes, the Rockies and Greenland standing out" style="width:768px;height:303px;object-fit:contain">
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Real terrain, with surface pressure lowered to match (about 560 hPa over Tibet, not 1010).</p>
+</div>
+</div>
+<div style="background:#14233A;border-radius:16px;padding:24px 40px"><p style="font-size:30px;line-height:1.35;color:#F4F1EA"><span style="color:#E8894A;font-weight:600">What it changes: </span>The ground under the air. Air forced over a slope stretches and squeezes columns of air: a source S for waves.</p></div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="exp-landsea" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 4 · Experiments · forcing 2 of 3</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Land–Sea Contrast: Off and On</h2>
+</div>
+<div style="flex:1;display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:24px 24px">
+<h3 style="font-size:36px;font-weight:600;color:#5A6168">Off: same at every longitude</h3>
+<img src="images/exp_ls_off.png" alt="Map of the lower-troposphere temperature in mid-July: smooth bands that depend only on latitude" style="width:768px;height:303px;object-fit:contain">
+<p style="font-size:28px;line-height:1.4;color:#4A5568">The background temperature depends on latitude only: warm tropics, cold poles.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:24px 24px">
+<h3 style="font-size:36px;font-weight:600;color:#B8501A">On: land differs from ocean</h3>
+<img src="images/exp_ls_on.png" alt="Map of the lower-troposphere temperature in mid-July with hot spots over Asia, North Africa and the southwestern United States" style="width:768px;height:303px;object-fit:contain">
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Observed land departures added over land only. The zonal average is unchanged.</p>
+</div>
+</div>
+<div style="background:#14233A;border-radius:16px;padding:24px 40px"><p style="font-size:30px;line-height:1.35;color:#F4F1EA"><span style="color:#E8894A;font-weight:600">What it changes: </span>The background temperature the model is pulled toward. Warm or cool land acts like a heating or cooling pattern.</p></div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="exp-heat" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 4 · Experiments · forcing 3 of 3</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Diabatic Heating: Off and On</h2>
+</div>
+<div style="flex:1;display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:24px 24px">
+<h3 style="font-size:36px;font-weight:600;color:#5A6168">Off: rain the same at every longitude</h3>
+<img src="images/exp_ht_off.png" alt="Map of the mean rain in June to August, zonally symmetric: a single band of heavy rain just north of the equator" style="width:768px;height:303px;object-fit:contain">
+<p style="font-size:28px;line-height:1.4;color:#4A5568">The same average rain all the way around each latitude circle: one tropical band.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:24px 24px">
+<h3 style="font-size:36px;font-weight:600;color:#B8501A">On: observed rainfall</h3>
+<img src="images/exp_ht_on.png" alt="Map of the observed mean rain in June to August, with heavy rain over the Indian Ocean, the western Pacific and the Americas" style="width:768px;height:303px;object-fit:contain">
+<p style="font-size:28px;line-height:1.4;color:#4A5568">Rain falls where it really does: the Indian Ocean, western Pacific, and the Americas.</p>
+</div>
+</div>
+<div style="background:#14233A;border-radius:16px;padding:24px 40px"><p style="font-size:30px;line-height:1.35;color:#F4F1EA"><span style="color:#E8894A;font-weight:600">What it changes: </span>Where latent heat is released. Heating in some places and not others pushes on the waves.</p></div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="five-runs" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 4 · Experiments</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">The Five Experiments</h2>
+</div>
+<table style="width:1664px;font-size:30px;color:#14233A">
+<tr style="background:#14233A"><th style="width:23%;color:#F4F1EA;text-align:left">Run</th><th style="width:14%;color:#F4F1EA;text-align:center">Mountains</th><th style="width:14%;color:#F4F1EA;text-align:center">Land–sea</th><th style="width:14%;color:#F4F1EA;text-align:center">Heating</th><th style="width:35%;color:#F4F1EA;text-align:left">What it shows</th></tr>
+<tr style="background:#FBFAF6"><td style="width:23%;font-weight:600">Baseline</td><td style="width:14%;color:#8A8F96;text-align:center">off</td><td style="width:14%;color:#8A8F96;text-align:center">off</td><td style="width:14%;color:#8A8F96;text-align:center">off</td><td style="width:35%">No longitude-dependent forcing at all</td></tr>
+<tr style="background:#EAE5D8"><td style="width:23%;font-weight:600">Mountains only</td><td style="width:14%;background:#B8501A;color:#F4F1EA;font-weight:600;text-align:center">ON</td><td style="width:14%;color:#8A8F96;text-align:center">off</td><td style="width:14%;color:#8A8F96;text-align:center">off</td><td style="width:35%">The effect of mountains</td></tr>
+<tr style="background:#FBFAF6"><td style="width:23%;font-weight:600">Land–sea only</td><td style="width:14%;color:#8A8F96;text-align:center">off</td><td style="width:14%;background:#B8501A;color:#F4F1EA;font-weight:600;text-align:center">ON</td><td style="width:14%;color:#8A8F96;text-align:center">off</td><td style="width:35%">The effect of land–sea contrast</td></tr>
+<tr style="background:#EAE5D8"><td style="width:23%;font-weight:600">Heating only</td><td style="width:14%;color:#8A8F96;text-align:center">off</td><td style="width:14%;color:#8A8F96;text-align:center">off</td><td style="width:14%;background:#B8501A;color:#F4F1EA;font-weight:600;text-align:center">ON</td><td style="width:35%">The effect of diabatic heating</td></tr>
+<tr style="background:#FBFAF6"><td style="width:23%;font-weight:600">All three</td><td style="width:14%;background:#B8501A;color:#F4F1EA;font-weight:600;text-align:center">ON</td><td style="width:14%;background:#B8501A;color:#F4F1EA;font-weight:600;text-align:center">ON</td><td style="width:14%;background:#B8501A;color:#F4F1EA;font-weight:600;text-align:center">ON</td><td style="width:35%">The full idealized model: the reference</td></tr>
+</table>
+<div style="flex:1"></div>
+<p style="font-size:30px;line-height:1.4;color:#4A5568;width:1500px">Run names: AC_SW_base, _mtn, _landsea, _heat and _all. For comparison, AC_Test is the same model run with the observed background state.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="reading" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 4 · Experiments</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Reading the Results</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;align-items:center;gap:40px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 40px">
+<p style="width:420px;font-size:30px;font-weight:600;line-height:1.3">Stationary eddy</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-style:italic;color:#14707C">z* = z − [z]</p>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 40px">
+<p style="width:420px;font-size:30px;font-weight:600;line-height:1.3">Response to a forcing</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-style:italic;color:#14707C">z*(run) − z*(base)</p>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:28px 40px">
+<p style="width:420px;font-size:30px;font-weight:600;line-height:1.3">Nonlinearity</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-style:italic;color:#14707C">all − mtn − landsea − heat + 2·base</p>
+</div>
+</div>
+<div style="flex:1"></div>
+<ul style="font-size:30px;line-height:1.4;display:flex;flex-direction:column;gap:12px;width:1500px">
+<li>[z] is the zonal mean; the maps show 500 hPa height, averaged over a season, like the ERA5 map</li>
+<li>The first months of each run are discarded while the model settles</li>
+<li>Each difference map shows what one forcing does on its own</li>
+</ul>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+<section id="sec-res" style="background:#14233A;color:#F4F1EA;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:flex-end;gap:24px">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#E8894A">Part 5</p>
+<h1 style="font-family:'Source Serif 4', Georgia, serif;font-size:128px;font-weight:600;line-height:1.05">Results</h1>
+<p style="font-size:44px;line-height:1.3;color:#C5D3E0;width:1400px">What each forcing does to the wave pattern</p>
+<p style="font-size:28px;color:#E8894A">Preliminary: about four model years of the five-year runs, winter and summer</p>
+</section>
+<section id="res-base" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 5 · Results · preliminary</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Baseline: No Zonal Asymmetry</h2>
+</div>
+<div style="flex:1;display:flex;gap:48px">
+<img src="images/base.png" alt="Map of the stationary eddy in the baseline run, winter and summer, 500 hPa" style="width:1040px;height:600px;object-fit:contain;border-radius:12px;border:1px solid #D9D4C7">
+<div style="flex:1;display:flex;flex-direction:column;gap:18px">
+<h3 style="font-size:32px;font-weight:600;color:#14707C">What to look for</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>Is z* close to zero?</li>
+<li>How big is the leftover pattern?</li>
+</ul>
+<h3 style="font-size:32px;font-weight:600;color:#B8501A">What we see so far</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>Very weak leftover patterns in both seasons</li>
+<li>Day-to-day rainfall leaves small random wiggles</li>
+<li>This is the starting point for every other panel</li>
+</ul>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Preliminary: about 3.75 years after spin-up; winter and summer; 500 hPa height; runs still in progress</p>
+</section>
+<section id="res-mtn" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 5 · Results · preliminary</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Mountains Alone</h2>
+</div>
+<div style="flex:1;display:flex;gap:48px">
+<img src="images/mtn.png" alt="Map of the 500 hPa height response to mountains alone, winter and summer" style="width:1040px;height:600px;object-fit:contain;border-radius:12px;border:1px solid #D9D4C7">
+<div style="flex:1;display:flex;flex-direction:column;gap:18px">
+<h3 style="font-size:32px;font-weight:600;color:#14707C">What to look for</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>A wave train downstream of the Rockies and the Tibetan Plateau?</li>
+<li>Is the response stronger in winter than in summer?</li>
+</ul>
+<h3 style="font-size:32px;font-weight:600;color:#B8501A">What we see so far</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>Winter: a deep low over northeast Asia, with highs over central Asia and Greenland</li>
+<li>Summer: weaker in the north; the largest features are around Antarctica</li>
+<li>The strongest of the three forcings in both seasons</li>
+</ul>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Preliminary: about 3.75 years after spin-up; winter and summer; 500 hPa height; runs still in progress</p>
+</section>
+<section id="res-landsea" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 5 · Results · preliminary</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Land–Sea Contrast Alone</h2>
+</div>
+<div style="flex:1;display:flex;gap:48px">
+<img src="images/landsea.png" alt="Map of the 500 hPa height response to land-sea contrast alone, winter and summer" style="width:1040px;height:600px;object-fit:contain;border-radius:12px;border:1px solid #D9D4C7">
+<div style="flex:1;display:flex;flex-direction:column;gap:18px">
+<h3 style="font-size:32px;font-weight:600;color:#14707C">What to look for</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>Is it larger or smaller than the mountain response?</li>
+<li>Are its centres over the continents or the oceans?</li>
+</ul>
+<h3 style="font-size:32px;font-weight:600;color:#B8501A">What we see so far</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>Winter: weak highs and lows over the North Pacific and Asia</li>
+<li>Summer: very weak</li>
+<li>Much weaker than the mountain response</li>
+</ul>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Preliminary: about 3.75 years after spin-up; winter and summer; 500 hPa height; runs still in progress</p>
+</section>
+<section id="res-heat" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 5 · Results · preliminary</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Diabatic Heating Alone</h2>
+</div>
+<div style="flex:1;display:flex;gap:48px">
+<img src="images/heat.png" alt="Map of the 500 hPa height response to diabatic heating alone, winter and summer" style="width:1040px;height:600px;object-fit:contain;border-radius:12px;border:1px solid #D9D4C7">
+<div style="flex:1;display:flex;flex-direction:column;gap:18px">
+<h3 style="font-size:32px;font-weight:600;color:#14707C">What to look for</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>A response near the tropical rain regions?</li>
+<li>Do wave trains extend into the extratropics?</li>
+</ul>
+<h3 style="font-size:32px;font-weight:600;color:#B8501A">What we see so far</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>Winter: a weak wave train from the North Pacific to North America</li>
+<li>Summer: very weak</li>
+<li>Much weaker than the mountain response</li>
+</ul>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Preliminary: about 3.75 years after spin-up; winter and summer; 500 hPa height; runs still in progress</p>
+</section>
+<section id="res-all" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 5 · Results · preliminary</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">All Three Together</h2>
+</div>
+<div style="flex:1;display:flex;gap:48px">
+<img src="images/all.png" alt="Map of the stationary eddy at 500 hPa in the run with mountains, land-sea contrast and heating, winter and summer" style="width:1040px;height:600px;object-fit:contain;border-radius:12px;border:1px solid #D9D4C7">
+<div style="flex:1;display:flex;flex-direction:column;gap:18px">
+<h3 style="font-size:32px;font-weight:600;color:#14707C">What to look for</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>Does it look like the ERA5 map?</li>
+<li>Which features are missing, and why?</li>
+</ul>
+<h3 style="font-size:32px;font-weight:600;color:#B8501A">What we see so far</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>Winter: a deep low over northeast Asia and a high over central Asia, as in ERA5</li>
+<li>Summer: weaker in the north, strong around Antarctica</li>
+<li>Almost the same as the observed-background run (correlation 0.96 in each season)</li>
+</ul>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Preliminary: about 3.75 years after spin-up; winter and summer; 500 hPa height; runs still in progress</p>
+</section>
+<section id="res-nonlin" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 5 · Results · preliminary</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Is the Whole the Sum of the Parts?</h2>
+</div>
+<div style="flex:1;display:flex;gap:48px">
+<img src="images/nonlin.png" alt="Map of the nonlinear residual, all minus mountains minus land-sea minus heating plus two times baseline, 500 hPa, winter and summer" style="width:1040px;height:600px;object-fit:contain;border-radius:12px;border:1px solid #D9D4C7">
+<div style="flex:1;display:flex;flex-direction:column;gap:18px">
+<h3 style="font-size:32px;font-weight:600;color:#14707C">What to look for</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>Where does the combined response differ from the sum of the three?</li>
+<li>Is that difference small compared with each single response?</li>
+</ul>
+<h3 style="font-size:32px;font-weight:600;color:#B8501A">What we see so far</h3>
+<ul style="font-size:27px;line-height:1.35;display:flex;flex-direction:column;gap:10px">
+<li>The combined response differs from the sum of the three</li>
+<li>Large in northern winter over the North Atlantic, Arctic and North Pacific</li>
+<li>Mountains plus heating and land–sea do not simply add</li>
+</ul>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Preliminary: about 3.75 years after spin-up; winter and summer; 500 hPa height; runs still in progress</p>
+</section>
+<section id="discussion" style="background:#14233A;color:#F4F1EA;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#E8894A">Wrap-up</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Discussion</h2>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between">
+<div style="display:flex;gap:40px;align-items:flex-start">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:80px;font-weight:600;line-height:1;color:#E8894A;width:80px">1</p>
+<p style="font-size:38px;line-height:1.3;width:1400px">Which forcing dominates the pattern at 500 hPa in winter, and which in summer?</p>
+</div>
+<div style="display:flex;gap:40px;align-items:flex-start">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:80px;font-weight:600;line-height:1;color:#E8894A;width:80px">2</p>
+<p style="font-size:38px;line-height:1.3;width:1400px">Why must the surface pressure be placed on the terrain before mountains can be added?</p>
+</div>
+<div style="display:flex;gap:40px;align-items:flex-start">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:80px;font-weight:600;line-height:1;color:#E8894A;width:80px">3</p>
+<p style="font-size:38px;line-height:1.3;width:1400px">How would you change the experiments to isolate ocean-only asymmetries such as the warm pool?</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#C5D3E0">Telly · stationary Rossby waves</p>
+</section>
+<section id="refs" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Appendix</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">References and Code</h2>
+</div>
+<div style="flex:1;display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FBFAF6;border:1px solid #D9D4C7;border-radius:16px;padding:40px">
+<h3 style="font-size:40px;font-weight:600">Model paper</h3>
+<p style="font-size:30px;line-height:1.4;color:#4A5568">Kirtman, B. P., and coauthors, 2025: A simplified-physics atmosphere general circulation model for idealized climate dynamics studies. Bull. Amer. Meteor. Soc., 106, E2073–E2086.</p>
+<p style="font-family:'IBM Plex Mono', monospace;font-size:26px;line-height:1.4;color:#14707C">doi.org/10.1175/BAMS-D-24-0196.1</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#14233A;color:#F4F1EA;border-radius:16px;padding:40px">
+<h3 style="font-size:40px;font-weight:600">Run it yourself</h3>
+<p style="font-family:'IBM Plex Mono', monospace;font-size:26px;line-height:1.6;color:#F4F1EA">github.com/ou-esplab/Telly<br>config/experiments/AC_SW_*.yaml<br>scripts/stationary_waves.py<br>EXPERIMENTS.md</p>
+<p style="font-size:28px;line-height:1.4;color:#C5D3E0">Original model: github.com/jsb288/Atmospheric-Teleconnection-Model</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
+</div><div id="hud"></div>
+<script>
+const slides=[...document.querySelectorAll('#stage section')];
+let i=Math.max(0,Math.min(slides.length-1,(parseInt(location.hash.slice(1))||1)-1));
+const stage=document.getElementById('stage'),hud=document.getElementById('hud');
+function fit(){const s=Math.min(innerWidth/1920,innerHeight/1080);
+  stage.style.transform='translate(-50%,-50%) scale('+s+')';}
+function show(n){i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle('on',k===i));
+  hud.textContent=(i+1)+' / '+slides.length+'  \u00b7  '+slides[i].id;
+  history.replaceState(null,'','#'+(i+1));}
+addEventListener('resize',fit);
+addEventListener('keydown',e=>{
+  if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();show(i+1)}
+  else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();show(i-1)}
+  else if(e.key==='Home')show(0);else if(e.key==='End')show(slides.length-1);
+  else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}});
+addEventListener('click',e=>show(e.clientX<innerWidth/3?i-1:i+1));
+fit();show(i);
+</script></body></html>

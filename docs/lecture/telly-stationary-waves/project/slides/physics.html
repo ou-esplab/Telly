@@ -1,0 +1,17 @@
+<section id="physics" style="background:#F4F1EA;color:#14233A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#14707C">Part 3 · From class to Telly</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Step 5: Simple Damping</h2>
+</div>
+<p style="font-size:34px;line-height:1.4;width:1500px">Friction, smoothing and a gentle pull toward a background state keep the model realistic and stable.</p>
+<table style="width:1664px;font-size:30px;color:#14233A">
+<tr style="background:#14233A"><th style="width:46%;color:#F4F1EA;text-align:left">What it does</th><th style="width:30%;color:#F4F1EA;text-align:left">Written as</th><th style="width:24%;color:#F4F1EA;text-align:left">How fast</th></tr>
+<tr style="background:#FBFAF6"><td style="width:46%;font-weight:600">Pulls temperature and surface pressure toward the background state</td><td style="width:30%;color:#14707C">−(T − Tref)/τ</td><td style="width:24%">40 days</td></tr>
+<tr style="background:#EAE5D8"><td style="width:46%;font-weight:600">Friction: pulls vorticity and divergence toward the background state</td><td style="width:30%;color:#14707C">−(ζ − ζref)/τ</td><td style="width:24%">150 days</td></tr>
+<tr style="background:#FBFAF6"><td style="width:46%;font-weight:600">Smooths the smallest scales</td><td style="width:30%;color:#14707C">diffusion</td><td style="width:24%">21 to 28 hours</td></tr>
+</table>
+<p style="font-size:28px;line-height:1.4;color:#4A5568;width:1500px">The pull is faster for the zonal mean (7 days) and for the lowest two layers (2 to 3 days).</p>
+<div style="flex:1"></div>
+<p style="font-size:36px;font-weight:600;line-height:1.3;color:#14707C">The background state is a choice, and our experiments change it.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5A6168">Telly · stationary Rossby waves</p>
+</section>
